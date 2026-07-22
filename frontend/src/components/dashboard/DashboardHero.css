@@ -1,0 +1,137 @@
+/* Hero Section */
+.dp-hero {
+  display: flex;
+  background-color: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #DCEAE1;
+  padding: 32px;
+  align-items: center;
+  gap: 32px;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+  animation: dp-hero-in 0.45s ease both;
+}
+
+.dp-hero:hover {
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+}
+
+@keyframes dp-hero-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dp-hero-text { flex: 1; }
+.dp-hero-text h1 { margin: 0 0 16px 0; font-size: 28px; color: #16332B; }
+.dp-hero-text p { color: #4B6E60; line-height: 1.6; margin: 0 0 24px 0; }
+
+.dp-hero-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.dp-btn-primary {
+  background-color: #2D6A4F;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.dp-btn-primary:hover:not(:disabled) {
+  background-color: #1B4332;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(45, 106, 79, 0.3);
+}
+
+.dp-btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.dp-btn-primary:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.dp-btn-secondary {
+  background-color: #f1f5f9;
+  color: #4B6E60;
+  border: 1px solid #BBD6C6;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.18s ease;
+}
+
+.dp-btn-secondary:hover {
+  background-color: #DCEAE1;
+  border-color: #96B6A6;
+  transform: translateY(-2px);
+}
+
+.dp-btn-secondary:active {
+  transform: translateY(0);
+}
+
+.dp-hero-art {
+  width: 440px;
+  animation: dp-art-in 0.5s ease both;
+  animation-delay: 0.1s;
+}
+
+@keyframes dp-art-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Gentle idle swim animation for the fish in the hero illustration */
+.dp-fish {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: dp-swim 4.5s ease-in-out infinite;
+}
+
+.dp-fish-1 { animation-duration: 4.2s; }
+.dp-fish-2 { animation-duration: 5.1s; animation-delay: 0.4s; }
+.dp-fish-3 { animation-duration: 3.8s; animation-delay: 0.8s; }
+
+@keyframes dp-swim {
+  0%   { transform: translate(0px, 0px); }
+  50%  { transform: translate(4px, -3px); }
+  100% { transform: translate(0px, 0px); }
+}
+
+@media (max-width: 900px) {
+  .dp-hero {
+    flex-direction: column;
+  }
+
+  .dp-hero-art {
+    max-width: 100%;
+    width: 360px;
+  }
+}
+
+@media (max-width: 640px) {
+  .dp-hero-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
