@@ -1,389 +1,199 @@
-# 🐟 E-Fisheries Management System
+# E-Fisheries Management System
 
-A modern web-based fisheries management platform designed to help fish farmers efficiently manage ponds, fish stocks, and fish growth records. The system aims to digitize fisheries operations by providing an organized, secure, and scalable solution built with **React**, **Django REST Framework**, and **PostgreSQL**.
+A full-stack application for fish farmers to manage ponds, fish-stock batches, and growth measurements. The React client consumes a Django REST Framework API backed by PostgreSQL. Records are ownership-aware: a user owns ponds, a pond owns stock batches, and a stock batch owns growth records.
 
----
+## Features
 
-# 📋 Table of Contents
+- Account registration, login, logout, and protected routes
+- Pond CRUD with capacity, source, status, and location data
+- Fish-stock CRUD scoped to a pond
+- Growth-record CRUD scoped to a stock batch
+- Growth analysis including biomass, survival, daily growth rate, and optional FCR
+- Django admin and server-side validation/database constraints
+- Token-auth compatibility for the existing frontend plus JWT endpoints for new clients
 
-- Overview
-- Features
-- Technology Stack
-- Project Structure
-- Installation
-- Backend Setup
-- Frontend Setup
-- Environment Variables
-- API Modules
-- Current Progress
-- Future Features
-- Contributors
-- License
+## Tech stack
 
----
+- Frontend: React 19, React Router, Vite, ESLint
+- Backend: Python, Django, Django REST Framework
+- Database: PostgreSQL (via psycopg)
+- Authentication: DRF Token Authentication and Simple JWT
 
-# 🌊 Overview
+## Project structure
 
-The **E-Fisheries Management System** is being developed as an academic software engineering project to simplify fisheries management.
-
-The system enables users to:
-
-- Manage fish ponds
-- Record fish stocking information
-- Monitor fish growth
-- Store fisheries data securely
-- Provide a scalable foundation for future fisheries management modules
-
----
-
-# ✨ Current Features
-
-## 🔐 Authentication & Core
-
-- User Registration
-- User Login
-- JWT Authentication
-- Protected API Endpoints
-- User Management
-
----
-
-## 🏞 Pond Management
-
-- Create Pond
-- View Pond Details
-- Update Pond Information
-- Delete Pond
-- Manage Pond Status
-
-Each pond belongs to an authenticated user.
-
----
-
-## 🐠 Stock Management
-
-- Add Fish Stock
-- View Fish Stock
-- Update Stock Information
-- Delete Stock
-- Assign Stock to a Pond
-
-Each stock record belongs to a specific pond.
-
----
-
-## 📈 Growth Management
-
-- Record Growth Entries
-- Track Fish Weight
-- Track Fish Length
-- View Growth History
-- Update Growth Records
-
-Each growth record belongs to a specific stock.
-
----
-
-# 🚧 Planned Features
-
-- Feeding Management
-- Water Quality Monitoring
-- Fish Health Management
-- Harvest Management
-- Financial Management
-- Weather Integration
-- Notification System
-- Reports & Analytics
-- Dashboard
-- AI-Based Growth Prediction
-
----
-
-# 💻 Technology Stack
-
-## Frontend
-
-- React
-- React Router
-- Axios
-- CSS
-
-## Backend
-
-- Python
-- Django
-- Django REST Framework
-
-## Database
-
-- PostgreSQL
-
-## Authentication
-
-- JWT Authentication
-
-## Version Control
-
-- Git
-- GitHub
-
----
-
-# 📁 Project Structure
-
-```
-E-FISHERIES/
-│
-├── .venv/
-│
+```text
+.
 ├── backend/
-│   │
-│   ├── backend/              # Django project configuration
-│   │
-│   ├── core/                 # Authentication & shared components
-│   │
-│   ├── ponds/                # Pond Management Module
-│   │
-│   ├── stocks/               # Stock Management Module
-│   │
-│   ├── growth/               # Growth Management Module
-│   │
-│   ├── .env
+│   ├── backend/          # Django settings and root routes
+│   ├── core/             # Authentication and homepage content
+│   ├── ponds/            # Pond domain
+│   ├── stocks/           # Fish-stock domain
+│   ├── growth/           # Growth-record domain
 │   ├── .env.example
-│   ├── manage.py
-│   ├── requirements.txt
-│   └── db.sqlite3
-│
-├── frontend/                 # React Application
-│
-├── .gitignore
-│
-└── README.md
+│   └── manage.py
+├── frontend/             # React/Vite application
+├── docs/
+│   ├── screenshots/
+│   ├── diagrams/
+│   └── sprint-reports/
+├── requirements.txt
+├── setup.sh              # macOS/Linux bootstrap
+├── setup.ps1             # Windows PowerShell bootstrap
+└── Makefile
 ```
 
----
+## Prerequisites
 
-# ⚙ Installation
+- Python 3.12 or later
+- Node.js 20 or later (includes npm)
+- PostgreSQL 14 or later
+- Git
 
-Clone the repository
+## Installation
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/E-Fisheries.git
+git clone https://github.com/<your-org>/E-fisheries-Management-system-.git
+cd E-fisheries-Management-system-
 ```
 
-Navigate into the project
+### PostgreSQL setup
+
+Create a local database and a dedicated user. Substitute secure values for the password.
 
 ```bash
-cd E-Fisheries
+psql postgres
+CREATE USER efisheries_user WITH PASSWORD 'replace-with-a-strong-password';
+CREATE DATABASE efisheries_db OWNER efisheries_user;
+\q
 ```
 
----
+On Windows, run these SQL commands in `psql` (installed with PostgreSQL) or pgAdmin's Query Tool.
 
-# 🔧 Backend Setup
+### Configure environment variables
 
-Navigate to the backend
+Copy the backend template and update the values for your database. The bootstrap scripts do this copy when the file does not exist.
 
 ```bash
+cp backend/.env.example backend/.env
+```
+
+Required backend variables:
+
+| Variable | Purpose | Development example |
+| --- | --- | --- |
+| `SECRET_KEY` | Django cryptographic key | a new long random value |
+| `DEBUG` | Enables development debug pages | `True` |
+| `ALLOWED_HOSTS` | Comma-separated Django hosts | `localhost,127.0.0.1` |
+| `CORS_ALLOWED_ORIGINS` | Browser origins allowed to call the API | `http://localhost:5173` |
+| `DB_NAME` | PostgreSQL database name | `efisheries_db` |
+| `DB_USER` | PostgreSQL role | `efisheries_user` |
+| `DB_PASSWORD` | PostgreSQL password | your local password |
+| `DB_HOST` | PostgreSQL host | `localhost` |
+| `DB_PORT` | PostgreSQL port | `5432` |
+
+The optional frontend configuration is in `frontend/.env.example`. `VITE_API_BASE_URL` defaults to `http://127.0.0.1:8000/api` and normally needs no change for local development.
+
+## Quick setup
+
+macOS/Linux:
+
+```bash
+chmod +x setup.sh
+./setup.sh
+```
+
+Windows PowerShell:
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+.\setup.ps1
+```
+
+The scripts create `.venv`, install Python and Node dependencies, copy `backend/.env.example` when necessary, create project folders, and run migrations. PostgreSQL must be running and the database credentials in `backend/.env` must be valid before the migration step.
+
+## Manual setup and running the project
+
+### Backend
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate       # Windows: .venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
 cd backend
-```
-
-Create a virtual environment
-
-```bash
-python -m venv .venv
-```
-
-Activate the virtual environment
-
-### macOS / Linux
-
-```bash
-source .venv/bin/activate
-```
-
-### Windows
-
-```bash
-.venv\Scripts\activate
-```
-
-Install dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-Apply migrations
-
-```bash
 python manage.py migrate
-```
-
-Create a superuser
-
-```bash
-python manage.py createsuperuser
-```
-
-Start the backend server
-
-```bash
+python manage.py createsuperuser  # optional, for /admin/
 python manage.py runserver
 ```
 
----
+The API is available at `http://127.0.0.1:8000/api/` and the Django admin at `http://127.0.0.1:8000/admin/`.
 
-# ⚛ Frontend Setup
+### Frontend
 
-Navigate to the frontend
+In another terminal:
 
 ```bash
 cd frontend
+npm ci
+npm run dev
 ```
 
-Install dependencies
+Open the URL Vite prints, normally `http://localhost:5173`.
+
+## Make commands
+
+On macOS/Linux after `./setup.sh`:
 
 ```bash
-npm install
+make setup       # run the bootstrap script
+make backend     # start Django
+make frontend    # start Vite
+make migrate     # apply migrations
+make superuser   # create a Django admin user
+make test        # run Django tests
+make lint        # run the frontend linter
 ```
 
-Run the React application
+## API modules
+
+All routes are prefixed with `/api/`. Collection/detail endpoints use conventional `GET`, `POST`, `PATCH`, and `DELETE` semantics.
+
+| Module | Endpoints |
+| --- | --- |
+| Public content | `GET /homepage/` |
+| Existing application auth | `POST /auth/signup/`, `/auth/login/`, `/auth/logout/`; `GET /auth/me/` |
+| JWT for new API clients | `POST /auth/token/`, `POST /auth/token/refresh/` |
+| Ponds | `GET, POST /ponds/`; `GET, PUT, PATCH, DELETE /ponds/{id}/` |
+| Stocks | `GET, POST /ponds/{pond_id}/stocks/`; `GET, PUT, PATCH, DELETE /stocks/{id}/` |
+| Growth | `GET, POST /stocks/{stock_id}/growth/`; `GET, PUT, PATCH, DELETE /growth/{id}/` |
+
+The existing React application uses `Authorization: Token <key>` from `/auth/login/`. JWT clients use `Authorization: Bearer <access-token>` and obtain tokens with Django's username/password credentials at `/auth/token/`. Both are supported to avoid breaking existing consumers.
+
+## Testing and quality checks
 
 ```bash
-npm start
+source .venv/bin/activate
+cd backend && python manage.py check && python manage.py test
+cd ../frontend && npm run lint && npm run build
 ```
 
----
+## Security and repository hygiene
 
-# 🔐 Environment Variables
+Never commit `backend/.env`, virtual environments, `node_modules`, database dumps, SQLite files, uploaded media, or generated static assets. The root `.gitignore` covers these files. Use a unique `SECRET_KEY`, `DEBUG=False`, HTTPS, restricted hosts/origins, and a managed PostgreSQL service in production.
 
-Create a `.env` file inside the `backend` directory.
+## Future improvements
 
-Example:
+- Add API versioning, OpenAPI documentation, pagination, filtering, and throttling
+- Replace or retire the legacy opaque-token flow once all clients use JWT refresh tokens
+- Add CI for backend tests, frontend lint/build, dependency scanning, and deployment checks
+- Add object storage for uploads, structured logging, error tracking, backups, and health checks
+- Add feeding, water-quality, health, harvest, finance, reporting, and notification modules
 
-```env
-SECRET_KEY=your_secret_key
+## Contributors
 
-DEBUG=True
+Add project contributors here, for example:
 
-DB_NAME=efisheries_db
-DB_USER=postgres
-DB_PASSWORD=your_password
-DB_HOST=localhost
-DB_PORT=5432
-```
+- Your Name — full-stack development
 
----
+## License
 
-# 📡 API Modules
-
-## Core
-
-Authentication and shared services.
-
-## Ponds
-
-```
-GET     /api/ponds/
-POST    /api/ponds/
-PUT     /api/ponds/{id}/
-DELETE  /api/ponds/{id}/
-```
-
----
-
-## Stocks
-
-```
-GET     /api/stocks/
-POST    /api/stocks/
-PUT     /api/stocks/{id}/
-DELETE  /api/stocks/{id}/
-```
-
----
-
-## Growth
-
-```
-GET     /api/growth/
-POST    /api/growth/
-PUT     /api/growth/{id}/
-DELETE  /api/growth/{id}/
-```
-
----
-
-# 📊 Entity Relationships
-
-```
-User
- │
- └── Pond
-       │
-       └── Stock
-              │
-              └── Growth
-```
-
-- One User can own multiple Ponds.
-- One Pond can contain multiple Stock records.
-- One Stock can contain multiple Growth records.
-
----
-
-# 🚀 Current Progress
-
-✅ Project Setup
-
-✅ Authentication
-
-✅ Pond Management Module
-
-✅ Stock Management Module
-
-✅ Growth Management Module
-
-🚧 Feeding Module
-
-🚧 Water Quality Module
-
-🚧 Financial Module
-
-🚧 Dashboard
-
-🚧 Notifications
-
----
-
-# 📈 Future Improvements
-
-- Interactive Dashboard
-- Charts & Analytics
-- Weather API Integration
-- SMS Notifications
-- AI-Based Fish Growth Prediction
-- Harvest Forecasting
-- Water Quality Monitoring
-- Mobile Responsive UI
-- Role-Based Access Control
-- Export Reports (PDF/Excel)
-
----
-
-# 👥 Contributors
-
-- **Shahoriyer Nadim**
-- Project Team Members
-
----
-
-# 📄 License
-
-This project is developed for academic and educational purposes.
-
----
-
-# 🙏 Acknowledgements
-
-Developed as part of a Software Engineering academic project. Special thanks to our supervisor, teammates, and everyone who contributed to the development of this system.
+Add the agreed project license before publishing or distributing the application.

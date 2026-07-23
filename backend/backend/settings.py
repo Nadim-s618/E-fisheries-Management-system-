@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import os
+from datetime import timedelta
 
 try:
     from dotenv import load_dotenv
@@ -108,7 +109,7 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'efisheries_db',
+        'NAME': os.getenv('DB_NAME', 'efisheries_db'),
         'USER': os.getenv('DB_USER') or '',
         'PASSWORD': os.getenv('DB_PASSWORD') or '',
         'HOST': os.getenv('DB_HOST') or 'localhost',
@@ -159,8 +160,20 @@ ALLOWED_HOSTS = env_list('ALLOWED_HOSTS', 'localhost,127.0.0.1')
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
+        # JWT is the preferred authentication scheme for new API clients.
+        # TokenAuthentication remains enabled so the existing React client and
+        # /api/auth/login/ response contract continue to work unchanged.
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.TokenAuthentication',
     ],
+}
+
+# Access tokens are intentionally short lived.  Refresh tokens are available
+# at /api/auth/token/refresh/ for clients that use the JWT endpoints.
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
 CORS_ALLOWED_ORIGINS = env_list(
