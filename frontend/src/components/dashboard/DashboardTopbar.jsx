@@ -47,18 +47,7 @@ export function DashboardTopbar({
       {/* Logo Section */}
       <Link to="/" className="dp-logo">
         <div className="dp-logo-mark">
-          <svg viewBox="0 0 32 32" fill="none">
-            <circle cx="16" cy="16" r="14" fill="#2D6A4F" opacity="0.15" />
-            <path
-              d="M8 20c2-4 4-6 8-6s6 2 8 6"
-              stroke="#2D6A4F"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-            <ellipse cx="13" cy="17" rx="2" ry="1.2" fill="#52B788" opacity="0.7" />
-            <ellipse cx="20" cy="17" rx="1.5" ry="1" fill="#52B788" opacity="0.5" />
-            <circle cx="16" cy="13" r="1" fill="#2D6A4F" opacity="0.4" />
-          </svg>
+          <img src="/logo.png" alt="e-Fisheries logo" />
         </div>
         <div className="dp-logo-text">
           <span className="dp-logo-name">e-Fisheries</span>
