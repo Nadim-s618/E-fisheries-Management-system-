@@ -149,6 +149,15 @@ export function getWaterQualityDashboard(pondId) {
 }
 
 
+export function getWeatherDashboard(pondId, options = {}) {
+  const params = new URLSearchParams();
+  params.set('pond', pondId);
+  if (options.refresh) params.set('refresh', '1');
+
+  return request(`/weather/dashboard/?${params.toString()}`);
+}
+
+
 export function getWaterQualityReadings(filters = {}) {
   const params = new URLSearchParams();
 
