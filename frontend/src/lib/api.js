@@ -144,6 +144,59 @@ export function deletePond(id) {
 }
 
 
+export function getWaterQualityDashboard(pondId) {
+  return request(`/water-quality/dashboard/?pond=${pondId}`);
+}
+
+
+export function getWaterQualityReadings(filters = {}) {
+  const params = new URLSearchParams();
+
+  if (filters.pond) params.set('pond', filters.pond);
+  if (filters.date) params.set('date', filters.date);
+  if (filters.status) params.set('status', filters.status);
+
+  const query = params.toString();
+  return request(`/water-quality/water-quality-readings/${query ? `?${query}` : ''}`);
+}
+
+
+export function createWaterQualityReading(reading) {
+  return request('/water-quality/water-quality-readings/', {
+    method: 'POST',
+    body: reading,
+  });
+}
+
+
+export function getWaterQualityHistory(filters = {}) {
+  const params = new URLSearchParams();
+
+  if (filters.pond) params.set('pond', filters.pond);
+  if (filters.period) params.set('period', filters.period);
+
+  return request(`/water-quality/history/?${params.toString()}`);
+}
+
+
+export function getWaterQualityGraph(filters = {}) {
+  const params = new URLSearchParams();
+
+  if (filters.pond) params.set('pond', filters.pond);
+  if (filters.period) params.set('period', filters.period);
+
+  return request(`/water-quality/graph/?${params.toString()}`);
+}
+
+
+export function compareWaterQualityPonds(pondIds) {
+  const params = new URLSearchParams();
+  params.set('ponds', pondIds.join(','));
+
+  return request(`/water-quality/compare/?${params.toString()}`);
+}
+
+
 export function getPondStocks(pondId) {
   return request(`/ponds/${pondId}/stocks/`);
 }
