@@ -13,6 +13,9 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 import os
 
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+BASE_DIR = Path(__file__).resolve().parent.parent
+
 try:
     from dotenv import load_dotenv
 except ImportError:
@@ -20,10 +23,7 @@ except ImportError:
         return False
 
 
-load_dotenv()
-
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / '.env')
 
 
 def env_bool(name, default=False):
@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     'stocks',
     'growth',
     'water_quality',
+    'weather',
 ]
 
 MIDDLEWARE = [
@@ -177,3 +178,8 @@ CORS_ALLOWED_ORIGINS = env_list(
 )
 
 CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
+
+OPENWEATHER_API_KEY = os.getenv('OPENWEATHER_API_KEY', '')
+OPENWEATHER_TIMEOUT_SECONDS = int(os.getenv('OPENWEATHER_TIMEOUT_SECONDS', '8'))
+OPENWEATHER_GEOCODING_COUNTRY_CODE = os.getenv('OPENWEATHER_GEOCODING_COUNTRY_CODE', 'BD')
+WEATHER_REPORT_CACHE_MINUTES = int(os.getenv('WEATHER_REPORT_CACHE_MINUTES', '30'))

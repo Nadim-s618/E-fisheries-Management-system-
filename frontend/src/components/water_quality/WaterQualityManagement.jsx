@@ -459,11 +459,23 @@ export default function WaterQualityManagement() {
   }, [period, selectedPondId, tableFilters.date, tableFilters.status]);
 
   useEffect(() => {
-    if (selectedPondId) loadDashboard(selectedPondId);
+    if (!selectedPondId) return undefined;
+
+    const timer = window.setTimeout(() => {
+      loadDashboard(selectedPondId);
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [selectedPondId, loadDashboard]);
 
   useEffect(() => {
-    if (activeTab === 'History' && selectedPondId) loadHistory();
+    if (activeTab !== 'History' || !selectedPondId) return undefined;
+
+    const timer = window.setTimeout(() => {
+      loadHistory();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [activeTab, selectedPondId, loadHistory]);
 
   async function loadComparison() {
