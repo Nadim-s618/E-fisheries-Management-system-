@@ -5,17 +5,6 @@ import { useAuth } from '../context/useAuth';
 import { getHomepage } from '../lib/api';
 import './HomePage.css';
 
-const FEATURE_ICONS = {
-  water: '🌊',
-  feed: '🐟',
-  growth: '📊',
-  health: '🏥',
-  weather: '🌤️',
-  finance: '💰',
-  market: '📈',
-  bridge: '🤝',
-};
-
 export default function HomePage() {
   const [content, setContent] = useState(null);
   const [loadError, setLoadError] = useState('');
@@ -57,8 +46,11 @@ export default function HomePage() {
         <nav className="navbar">
           <div className="navbar-inner">
             <span className="logo">
-              <span className="logo-icon">🐠</span>
-              E-Fisheries
+              <img src="/logo.png" alt="E-Fisheries logo" className="logo-icon" />
+              <span className="logo-text">
+                <span className="logo-name">E-Fisheries</span>
+                <span className="logo-sub">Management System</span>
+              </span>
             </span>
             <Link to="/login" className="btn-nav">Sign In</Link>
           </div>
@@ -78,8 +70,11 @@ export default function HomePage() {
       <nav className="navbar">
         <div className="navbar-inner">
           <span className="logo">
-            <span className="logo-icon">🐠</span>
-            E-Fisheries
+            <img src="/logo.png" alt="E-Fisheries logo" className="logo-icon" />
+            <span className="logo-text">
+              <span className="logo-name">E-Fisheries</span>
+              <span className="logo-sub">Management System</span>
+            </span>
           </span>
           <ul className="nav-links">
             {content.navLinks.map(link => (
@@ -104,9 +99,10 @@ export default function HomePage() {
         </div>
       </nav>
 
-      {/* ── Hero ── */}
-      <section className="hero" id="home">
+      {/* ══════════════ PAGE 1 — Hero + Stats ══════════════ */}
+      <section className="page page-hero" id="home">
         <div className="hero-overlay" />
+
         <div className="hero-inner">
           <span className="hero-eyebrow">{content.hero.eyebrow}</span>
           <h1 className="hero-title">
@@ -122,37 +118,39 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Decorative wave */}
-        <div className="hero-wave" aria-hidden="true">
-          <svg viewBox="0 0 1440 80" preserveAspectRatio="none">
-            <path d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z" fill="white" />
-          </svg>
+        <div className="stats-strip">
+          {content.stats.map(s => (
+            <div className="stat-item" key={s.label}>
+              <span className="stat-value">{s.value}</span>
+              <span className="stat-label">{s.label}</span>
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* ── Stats bar ── */}
-      <section className="stats-bar">
-        {content.stats.map(s => (
-          <div className="stat-item" key={s.label}>
-            <span className="stat-value">{s.value}</span>
-            <span className="stat-label">{s.label}</span>
-          </div>
-        ))}
-      </section>
-
-      {/* ── Features ── */}
-      <section className="features-section" id="features">
+      {/* ══════════════ PAGE 2 — Features ══════════════ */}
+      <section className="page page-features" id="features">
         <div className="section-inner">
           <p className="section-eyebrow">What's included</p>
           <h2 className="section-title">Everything your fishery needs</h2>
+          <div className="section-dots" aria-hidden="true">
+            <span /><span /><span />
+          </div>
           <p className="section-sub">
             From individual farmers to large investors, E-Fisheries covers every
             operational layer of a modern fisheries business.
           </p>
           <div className="features-grid">
-            {content.features.map(f => (
+            {content.features.map((f, index) => (
               <div className="feature-card" key={f.title}>
-                <span className="feature-icon" aria-hidden="true">{FEATURE_ICONS[f.icon] || f.icon}</span>
+                <div className="feature-media">
+                  <img
+                    src={`/feature-${index + 1}.png`}
+                    alt=""
+                    aria-hidden="true"
+                    className="feature-image"
+                  />
+                </div>
                 <h3>{f.title}</h3>
                 <p>{f.desc}</p>
               </div>
@@ -161,11 +159,20 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── CTA Banner ── */}
-      <section className="cta-section">
+      {/* ══════════════ PAGE 3 — Closing / CTA ══════════════ */}
+      <section className="page page-closing">
         <div className="cta-inner">
+          <p className="closing-eyebrow">Built for the whole fishery</p>
           <h2>{content.cta.title}</h2>
-          <p>{content.cta.subtitle}</p>
+          <p className="cta-sub">{content.cta.subtitle}</p>
+
+          <ul className="role-pills" aria-label="Who E-Fisheries is built for">
+            <li>Farmers</li>
+            <li>Pond managers</li>
+            <li>Investors</li>
+            <li>Consultants</li>
+          </ul>
+
           <Link to="/signup" className="btn-primary btn-large">{content.cta.buttonText}</Link>
         </div>
       </section>
@@ -174,8 +181,11 @@ export default function HomePage() {
       <footer className="footer">
         <div className="footer-inner">
           <span className="logo logo-footer">
-            <span className="logo-icon">🐠</span>
-            E-Fisheries
+            <img src="/logo.png" alt="E-Fisheries logo" className="logo-icon" />
+            <span className="logo-text">
+              <span className="logo-name">E-Fisheries</span>
+              <span className="logo-sub">Management System</span>
+            </span>
           </span>
           <p className="footer-copy">© 2026 E-Fisheries. E-Fisheries Management System.</p>
           <ul className="footer-links">
