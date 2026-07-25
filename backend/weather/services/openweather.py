@@ -1,9 +1,11 @@
 import json
+import ssl
 from datetime import datetime, timezone
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
+import certifi
 from django.conf import settings
 
 
@@ -34,8 +36,10 @@ def fetch_json(url, params):
     request_url = f'{url}?{urlencode(request_params)}'
     request = Request(request_url, headers={'User-Agent': USER_AGENT})
 
+    ssl_context = ssl.create_default_context(cafile=certifi.where())
+
     try:
-        with urlopen(request, timeout=timeout) as response:
+        with urlopen(request, context=ssl_context, timeout=timeout) as response:
             return json.loads(response.read().decode('utf-8'))
     except HTTPError as exc:
         detail = read_http_error_detail(exc)
