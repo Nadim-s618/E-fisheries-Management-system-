@@ -6,6 +6,7 @@ import { DashboardSummary } from '../components/dashboard/DashboardSummary';
 import { DashboardTopbar } from '../components/dashboard/DashboardTopbar';
 import { PondManagement } from '../components/dashboard/PondManagement';
 import { StockGrowthManagement } from '../components/dashboard/StockGrowthManagement';
+import WaterQualityManagement from '../components/water_quality/WaterQualityManagement';
 import { useAuth } from '../context/useAuth';
 import {
   DASHBOARD_ALERTS,
@@ -36,7 +37,7 @@ export default function DashboardPage() {
 
   return (
     <div className="dp-root">
-      <DashboardTopbar onPondsClick={handleViewPonds} user={user} />
+      <DashboardTopbar onPondsClick={handleViewPonds} user={user} notifications={DASHBOARD_ALERTS} />
 
       <div className="dp-body">
         <DashboardSidebar
@@ -53,6 +54,8 @@ export default function DashboardPage() {
             <PondManagement key={pondFormOpenSignal} openOnMount={pondFormOpenSignal > 0} />
           ) : activeNav === 'stock' ? (
             <StockGrowthManagement />
+          ) : activeNav === 'water' ? (
+            <WaterQualityManagement />
           ) : (
             <>
               <DashboardSummary alerts={DASHBOARD_ALERTS} stats={DASHBOARD_STATS} />

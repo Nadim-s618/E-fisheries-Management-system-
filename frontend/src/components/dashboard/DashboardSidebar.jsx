@@ -11,7 +11,7 @@ export function DashboardSidebar({
     <aside className="dp-sidebar" aria-label="Module navigation">
       <div className="dp-sidebar-brand">
         <div className="dp-sidebar-brand-text">
-          <span className="dp-sidebar-brand-name">E-Fisheries</span>
+          <span className="dp-sidebar-brand-name"> Dashboard</span>
           
         </div>
       </div>
