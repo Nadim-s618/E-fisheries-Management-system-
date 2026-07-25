@@ -8,12 +8,14 @@ export function DashboardTopbar({
   onNotificationClick,
   onProfileClick,
   user,
-  notificationCount = 0,
+  notifications = [],
 }) {
   const [isSearchActive, setIsSearchActive] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const navigate = useNavigate();
 
+  const notificationCount = notifications.length;
   const initial = (user?.first_name || 'P').charAt(0).toUpperCase();
   const userName = user?.first_name || 'Profile';
   const userEmail = user?.email || 'user@fisheries.local';
@@ -25,10 +27,12 @@ export function DashboardTopbar({
 
   const handleNotification = () => {
     setIsProfileOpen(false);
+    setIsNotificationOpen(current => !current);
     onNotificationClick?.();
   };
 
   const handleProfileClick = () => {
+    setIsNotificationOpen(false);
     setIsProfileOpen(!isProfileOpen);
   };
 
@@ -98,31 +102,64 @@ export function DashboardTopbar({
         </button>
 
         {/* Notification Button */}
-        <button
-          className="dp-icon-btn dp-notif-btn"
-          onClick={handleNotification}
-          aria-label={`Notifications${notificationCount > 0 ? ` (${notificationCount} new)` : ''}`}
-          title="Notifications"
-        >
-          <svg
-            width="17"
-            height="17"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        <div className="dp-notif-wrapper">
+          <button
+            className="dp-icon-btn dp-notif-btn"
+            onClick={handleNotification}
+            aria-label={`Notifications${notificationCount > 0 ? ` (${notificationCount} new)` : ''}`}
+            title="Notifications"
+            aria-expanded={isNotificationOpen}
           >
-            <path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-            <path d="M13.73 21a2 2 0 01-3.46 0" />
-          </svg>
-          {notificationCount > 0 && (
-            <span className="dp-notif-badge" aria-label={`${notificationCount} new notifications`}>
-              {notificationCount > 9 ? '9+' : notificationCount}
-            </span>
+            <svg
+              width="17"
+              height="17"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 01-3.46 0" />
+            </svg>
+            {notificationCount > 0 && (
+              <span className="dp-notif-badge" aria-label={`${notificationCount} new notifications`}>
+                {notificationCount > 9 ? '9+' : notificationCount}
+              </span>
+            )}
+          </button>
+
+          {isNotificationOpen && (
+            <div className="dp-notif-menu" role="menu" aria-label="Notifications">
+              <div className="dp-notif-menu-header">
+                <span>Notifications</span>
+                <small>{notificationCount} new</small>
+              </div>
+              <div className="dp-notif-list">
+                {notifications.length > 0 ? (
+                  notifications.map((notification, index) => (
+                    <button
+                      key={`${notification.pond}-${notification.issue}-${index}`}
+                      type="button"
+                      className="dp-notif-menu-item"
+                      onClick={() => setIsNotificationOpen(false)}
+                    >
+                      <strong>{notification.pond}</strong>
+                      <span>{notification.issue}</span>
+                    </button>
+                  ))
+                ) : (
+                  <div className="dp-notif-menu-empty">No new notifications.</div>
+                )}
+              </div>
+            </div>
           )}
-        </button>
+
+          {isNotificationOpen && (
+            <div className="dp-notif-backdrop" onClick={() => setIsNotificationOpen(false)} aria-hidden="true" />
+          )}
+        </div>
 
         {/* Profile Dropdown */}
         <div className="dp-profile-wrapper">
