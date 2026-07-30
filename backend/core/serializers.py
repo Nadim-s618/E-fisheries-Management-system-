@@ -3,6 +3,8 @@ from django.contrib.auth.password_validation import validate_password
 from django.utils.text import slugify
 from rest_framework import serializers
 
+from .models import Notification
+
 
 User = get_user_model()
 
@@ -88,3 +90,23 @@ class LoginSerializer(serializers.Serializer):
 
         attrs['user'] = user
         return attrs
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    pond_name = serializers.CharField(source='pond.name', read_only=True)
+
+    class Meta:
+        model = Notification
+        fields = (
+            'id',
+            'pond',
+            'pond_name',
+            'parameter',
+            'current_value',
+            'reason',
+            'priority',
+            'is_read',
+            'created_at',
+            'updated_at',
+        )
+        read_only_fields = fields
