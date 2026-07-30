@@ -5,7 +5,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from .content import HOMEPAGE_CONTENT
-from .serializers import LoginSerializer, SignupSerializer, UserSerializer
+from .models import Notification
+from .serializers import LoginSerializer, NotificationSerializer, SignupSerializer, UserSerializer
 
 
 def auth_payload(user, token):
@@ -51,4 +52,42 @@ def me(request):
 @permission_classes([IsAuthenticated])
 def logout(request):
     Token.objects.filter(user=request.user).delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def notifications(request):
+    queryset = Notification.objects.select_related('pond').filter(user=request.user)
+
+    unread = request.query_params.get('unread')
+    if unread in {'1', 'true', 'yes'}:
+        queryset = queryset.filter(is_read=False)
+
+    try:
+        limit = int(request.query_params.get('limit', 20))
+    except (TypeError, ValueError):
+        limit = 20
+    limit = max(1, min(limit, 50))
+
+    serializer = NotificationSerializer(queryset[:limit], many=True)
+    return Response(serializer.data)
+
+
+@api_view(['PATCH', 'POST'])
+@permission_classes([IsAuthenticated])
+def mark_notification_read(request, pk):
+    notification = Notification.objects.filter(pk=pk, user=request.user).first()
+    if notification is None:
+        return Response({'detail': 'Notification not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    notification.is_read = True
+    notification.save(update_fields=['is_read', 'updated_at'])
+    return Response(NotificationSerializer(notification).data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def mark_notifications_read(request):
+    Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
     return Response(status=status.HTTP_204_NO_CONTENT)
