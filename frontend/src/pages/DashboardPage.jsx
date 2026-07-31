@@ -7,6 +7,7 @@ import { DashboardTopbar } from '../components/dashboard/DashboardTopbar';
 import { PondManagement } from '../components/dashboard/PondManagement';
 import { StockGrowthManagement } from '../components/dashboard/StockGrowthManagement';
 import MarketAnalysis from '../components/market_analysis/MarketAnalysis';
+import FeedingManagement from '../components/feeding/FeedingManagement';
 import WeatherManagement from '../components/weather/WeatherManagement';
 import WaterQualityManagement from '../components/water_quality/WaterQualityManagement';
 import { useAuth } from '../context/useAuth';
@@ -126,6 +127,8 @@ export default function DashboardPage() {
             <StockGrowthManagement />
           ) : activeNav === 'water' ? (
             <WaterQualityManagement onNotificationChange={loadNotifications} />
+          ) : activeNav === 'feeding' ? (
+            <FeedingManagement onNotificationChange={loadNotifications} />
           ) : activeNav === 'weather' ? (
             <WeatherManagement onNotificationChange={loadNotifications} />
           ) : activeNav === 'analysis' ? (
