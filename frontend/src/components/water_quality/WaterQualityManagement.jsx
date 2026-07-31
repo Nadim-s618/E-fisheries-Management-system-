@@ -372,7 +372,7 @@ export function AIAdvicePanel({ dashboard }) {
   );
 }
 
-export default function WaterQualityManagement() {
+export default function WaterQualityManagement({ onNotificationChange }) {
   const [ponds, setPonds] = useState([]);
   const [selectedPondId, setSelectedPondId] = useState('');
   const [activeTab, setActiveTab] = useState('Dashboard');
@@ -497,6 +497,7 @@ export default function WaterQualityManagement() {
     setSelectedPondId(pondId);
     setActiveTab('Dashboard');
     loadDashboard(pondId);
+    onNotificationChange?.();
   }
 
   return (
