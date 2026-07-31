@@ -185,6 +185,8 @@ export function getWeatherDashboard(pondId, options = {}) {
 
 export function getMarketAnalysisDashboard() {
   return request('/market-analysis/dashboard/');
+}
+
 export function getFeedingDashboard(pondId) {
   return request(`/feeding/dashboard/?pond=${pondId}`);
 }
