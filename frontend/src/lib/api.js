@@ -183,6 +183,39 @@ export function getWeatherDashboard(pondId, options = {}) {
 }
 
 
+export function getFeedingDashboard(pondId) {
+  return request(`/feeding/dashboard/?pond=${pondId}`);
+}
+
+
+export function getFeedingHistory(pondId) {
+  return request(`/feeding/history/?pond=${pondId}`);
+}
+
+
+export function acceptFeedingRecommendation(id) {
+  return request(`/feeding/recommendations/${id}/accept/`, {
+    method: 'POST',
+  });
+}
+
+
+export function editFeedingRecommendation(id, recommendation) {
+  return request(`/feeding/recommendations/${id}/edit/`, {
+    method: 'PATCH',
+    body: recommendation,
+  });
+}
+
+
+export function completeFeedingSession(id, session) {
+  return request(`/feeding/sessions/${id}/complete/`, {
+    method: 'POST',
+    body: session,
+  });
+}
+
+
 export function getWaterQualityReadings(filters = {}) {
   const params = new URLSearchParams();
 

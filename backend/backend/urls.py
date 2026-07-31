@@ -25,4 +25,5 @@ urlpatterns = [
     path('api/', include('growth.urls')),
     path('api/water-quality/', include('water_quality.urls')),
     path('api/weather/', include('weather.urls')),
+    path('api/feeding/', include('feeding.urls')),
 ]
