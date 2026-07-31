@@ -6,6 +6,7 @@ import { DashboardSummary } from '../components/dashboard/DashboardSummary';
 import { DashboardTopbar } from '../components/dashboard/DashboardTopbar';
 import { PondManagement } from '../components/dashboard/PondManagement';
 import { StockGrowthManagement } from '../components/dashboard/StockGrowthManagement';
+import MarketAnalysis from '../components/market_analysis/MarketAnalysis';
 import WeatherManagement from '../components/weather/WeatherManagement';
 import WaterQualityManagement from '../components/water_quality/WaterQualityManagement';
 import { useAuth } from '../context/useAuth';
@@ -127,6 +128,8 @@ export default function DashboardPage() {
             <WaterQualityManagement onNotificationChange={loadNotifications} />
           ) : activeNav === 'weather' ? (
             <WeatherManagement onNotificationChange={loadNotifications} />
+          ) : activeNav === 'analysis' ? (
+            <MarketAnalysis />
           ) : (
             <>
               <DashboardSummary alerts={summaryAlerts} stats={DASHBOARD_STATS} />

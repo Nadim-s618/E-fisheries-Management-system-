@@ -183,6 +183,11 @@ export function getWeatherDashboard(pondId, options = {}) {
 }
 
 
+export function getMarketAnalysisDashboard() {
+  return request('/market-analysis/dashboard/');
+}
+
+
 export function getWaterQualityReadings(filters = {}) {
   const params = new URLSearchParams();
 
