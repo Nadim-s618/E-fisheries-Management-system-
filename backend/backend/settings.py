@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     'growth',
     'water_quality',
     'weather',
+    'feeding',
 ]
 
 MIDDLEWARE = [
