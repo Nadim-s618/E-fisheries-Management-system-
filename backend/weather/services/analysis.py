@@ -316,6 +316,8 @@ def build_alerts(next_48h, temperature, wind_speed, rain_probability, rain_mm, n
 
     if temperature >= 35:
         alerts.append({'level': 'danger', 'text': 'Heat stress risk for fish'})
+    elif temperature >= 32:
+        alerts.append({'level': 'warning', 'text': 'Temperature is increasing'})
 
     if not alerts:
         alerts.append({'level': 'ok', 'text': 'No bad weather warning for the next 24 hours'})
