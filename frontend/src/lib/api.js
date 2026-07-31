@@ -116,6 +116,31 @@ export function logout() {
 }
 
 
+export function getNotifications(options = {}) {
+  const params = new URLSearchParams();
+
+  if (options.unread) params.set('unread', '1');
+  if (options.limit) params.set('limit', options.limit);
+
+  const query = params.toString();
+  return request(`/notifications/${query ? `?${query}` : ''}`);
+}
+
+
+export function markNotificationRead(id) {
+  return request(`/notifications/${id}/read/`, {
+    method: 'PATCH',
+  });
+}
+
+
+export function markNotificationsRead() {
+  return request('/notifications/mark-read/', {
+    method: 'POST',
+  });
+}
+
+
 export function getPonds() {
   return request('/ponds/');
 }

@@ -11,15 +11,15 @@
   flex-direction: column;
   height: 100vh;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background-color: #E9F5EE;
+  background-color: #f9fbfa;
   background-image:
-    radial-gradient(circle at 8% 8%, rgba(116, 198, 157, 0.35), transparent 40%),
-    radial-gradient(circle at 92% 12%, rgba(64, 145, 108, 0.28), transparent 45%),
-    radial-gradient(circle at 85% 90%, rgba(150, 214, 181, 0.3), transparent 45%),
-    radial-gradient(circle at 10% 92%, rgba(45, 106, 79, 0.18), transparent 40%),
+    radial-gradient(circle at 8% 8%, rgb(253, 254, 254), transparent 40%),
+    radial-gradient(circle at 92% 12%, rgb(250, 254, 252), transparent 45%),
+    radial-gradient(circle at 85% 90%, rgb(244, 254, 249), transparent 45%),
+    radial-gradient(circle at 10% 92%, rgb(247, 251, 249), transparent 40%),
     linear-gradient(135deg, #EAF7EF 0%, #DFF1E6 35%, #E4F2E9 65%, #EFF8F2 100%);
   background-attachment: fixed;
-  color: #28453A;
+  color: #ffffff;
 }
 
 .dp-root h1,
