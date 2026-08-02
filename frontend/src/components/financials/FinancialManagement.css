@@ -1,0 +1,478 @@
+.fm-root {
+  --fm-bg: #f7faf9;
+  --fm-panel: #ffffff;
+  --fm-line: #dbe5e3;
+  --fm-ink: #142120;
+  --fm-muted: #607371;
+  --fm-teal: #0d9488;
+  --fm-teal-dark: #0f766e;
+  --fm-income: #16834d;
+  --fm-expense: #bd3b2a;
+  --fm-warning: #b7791f;
+  --fm-blue: #2f6fbd;
+
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 24px;
+  background: var(--fm-bg);
+  color: var(--fm-ink);
+}
+
+.fm-root * {
+  box-sizing: border-box;
+}
+
+.fm-header,
+.fm-header-actions,
+.fm-panel-header,
+.fm-actions,
+.fm-card-top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.fm-header {
+  margin-bottom: 18px;
+}
+
+.fm-header span,
+.fm-panel-header span,
+.fm-card-top span,
+.fm-metric span {
+  display: block;
+  color: var(--fm-teal-dark);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.fm-header h1,
+.fm-panel-header h2,
+.fm-card-top h3 {
+  margin: 0;
+  color: var(--fm-ink);
+  line-height: 1.12;
+}
+
+.fm-header h1 {
+  font-size: clamp(28px, 4vw, 42px);
+}
+
+.fm-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.fm-tabs button,
+.fm-btn {
+  min-height: 40px;
+  border: 1px solid var(--fm-line);
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  padding: 9px 13px;
+  white-space: nowrap;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.18s ease, box-shadow 0.2s ease;
+}
+
+.fm-tabs button {
+  background: #fff;
+  color: var(--fm-muted);
+}
+
+.fm-tabs button:hover,
+.fm-btn-secondary:hover {
+  background: #edf8f6;
+  border-color: #8ed5cc;
+  color: var(--fm-teal-dark);
+  transform: translateY(-2px);
+}
+
+.fm-tabs button.active,
+.fm-btn-primary {
+  background: linear-gradient(135deg, #12b5a8, var(--fm-teal-dark));
+  border-color: var(--fm-teal-dark);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(13, 148, 136, 0.24);
+}
+
+.fm-tabs button.active:hover {
+  transform: none;
+}
+
+.fm-btn-secondary {
+  background: #fff;
+  color: var(--fm-muted);
+}
+
+.fm-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+  transform: none;
+}
+
+.fm-stack,
+.fm-form,
+.fm-budget-list {
+  display: grid;
+  gap: 16px;
+}
+
+.fm-grid-two {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.fm-overview {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.fm-overview-small {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.fm-panel,
+.fm-metric,
+.fm-state,
+.fm-budget-card,
+.fm-performance-card {
+  background: var(--fm-panel);
+  border: 1px solid var(--fm-line);
+  border-radius: 8px;
+}
+
+.fm-panel,
+.fm-form,
+.fm-state {
+  padding: 18px;
+}
+
+.fm-metric {
+  min-height: 112px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fm-metric:hover,
+.fm-budget-card:hover,
+.fm-performance-card:hover {
+  transform: translateY(-3px);
+  border-color: #9edbd4;
+  box-shadow: 0 12px 24px rgba(20, 33, 32, 0.08);
+}
+
+.fm-metric strong {
+  font-size: clamp(22px, 3vw, 32px);
+  line-height: 1;
+}
+
+.fm-metric small {
+  color: var(--fm-muted);
+  font-weight: 700;
+}
+
+.fm-metric-income strong,
+.fm-positive {
+  color: var(--fm-income);
+}
+
+.fm-metric-expense strong,
+.fm-negative {
+  color: var(--fm-expense);
+}
+
+.fm-metric-warning strong {
+  color: var(--fm-warning);
+}
+
+.fm-field {
+  display: grid;
+  gap: 6px;
+  color: var(--fm-muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.fm-field input,
+.fm-field select,
+.fm-field textarea {
+  min-height: 42px;
+  min-width: 0;
+  width: 100%;
+  border: 1px solid var(--fm-line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--fm-ink);
+  font: inherit;
+  font-weight: 600;
+  padding: 9px 11px;
+}
+
+.fm-field textarea {
+  resize: vertical;
+}
+
+.fm-field input:focus,
+.fm-field select:focus,
+.fm-field textarea:focus {
+  outline: none;
+  border-color: var(--fm-teal);
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.14);
+}
+
+.fm-pond-picker select {
+  min-width: min(280px, 76vw);
+}
+
+.fm-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.fm-form-grid-compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.fm-field-wide {
+  grid-column: 1 / -1;
+}
+
+.fm-state {
+  color: var(--fm-muted);
+  font-weight: 800;
+  text-align: center;
+}
+
+.fm-state-error {
+  border-color: #f1b5ad;
+  background: #fff2f0;
+  color: var(--fm-expense);
+}
+
+.fm-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--fm-line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.fm-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+}
+
+.fm-table th,
+.fm-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--fm-line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.fm-table th {
+  color: var(--fm-muted);
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.fm-table td strong,
+.fm-table td small {
+  display: block;
+}
+
+.fm-table td small {
+  margin-top: 3px;
+  color: var(--fm-muted);
+}
+
+.fm-bars {
+  display: grid;
+  gap: 12px;
+}
+
+.fm-bar-row {
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) minmax(140px, 2fr) minmax(88px, auto);
+  align-items: center;
+  gap: 12px;
+  color: var(--fm-muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.fm-bar-row div,
+.fm-progress {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e9efee;
+}
+
+.fm-bar-row i,
+.fm-progress i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #2f6fbd, #12b5a8);
+}
+
+.fm-trend {
+  min-height: 240px;
+  display: flex;
+  align-items: end;
+  gap: 12px;
+  padding-top: 16px;
+}
+
+.fm-trend-col {
+  flex: 1;
+  min-width: 42px;
+  display: grid;
+  gap: 8px;
+  text-align: center;
+  color: var(--fm-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.fm-trend-bars {
+  height: 188px;
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px;
+  border-radius: 8px;
+  background: #f1f6f5;
+}
+
+.fm-trend-bars i {
+  width: 12px;
+  min-height: 6px;
+  border-radius: 6px 6px 0 0;
+}
+
+.fm-trend-bars .income {
+  background: var(--fm-income);
+}
+
+.fm-trend-bars .expense {
+  background: var(--fm-expense);
+}
+
+.fm-budget-card,
+.fm-performance-card {
+  padding: 16px;
+}
+
+.fm-budget-list,
+.fm-performance-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.fm-budget-card dl,
+.fm-performance-card dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 14px 0 0;
+}
+
+.fm-performance-card dl {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.fm-budget-card dt,
+.fm-performance-card dt {
+  color: var(--fm-muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.fm-budget-card dd,
+.fm-performance-card dd {
+  margin: 4px 0 0;
+  font-weight: 900;
+}
+
+.fm-chip {
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.fm-chip-income {
+  background: #e2f6eb;
+  color: var(--fm-income);
+}
+
+.fm-chip-expense {
+  background: #fdecea;
+  color: var(--fm-expense);
+}
+
+@media (max-width: 1080px) {
+  .fm-overview {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .fm-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .fm-root {
+    padding: 16px;
+  }
+
+  .fm-grid-two,
+  .fm-overview,
+  .fm-overview-small,
+  .fm-form-grid,
+  .fm-form-grid-compact,
+  .fm-budget-list,
+  .fm-performance-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .fm-header-actions {
+    width: 100%;
+  }
+
+  .fm-pond-picker {
+    flex: 1;
+  }
+
+  .fm-bar-row {
+    grid-template-columns: 1fr;
+  }
+
+  .fm-budget-card dl,
+  .fm-performance-card dl {
+    grid-template-columns: 1fr 1fr;
+  }
+}

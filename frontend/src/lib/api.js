@@ -158,6 +158,103 @@ export function getWeatherDashboard(pondId, options = {}) {
 }
 
 
+export function getFishHealthDashboard(pondId) {
+  const params = new URLSearchParams();
+  if (pondId) params.set('pond', pondId);
+
+  const query = params.toString();
+  return request(`/fish-health/dashboard/${query ? `?${query}` : ''}`);
+}
+
+
+export function getDiseaseLibrary(filters = {}) {
+  const params = new URLSearchParams();
+  if (filters.search) params.set('search', filters.search);
+  if (filters.risk) params.set('risk', filters.risk);
+
+  const query = params.toString();
+  return request(`/fish-health/diseases/${query ? `?${query}` : ''}`);
+}
+
+
+export function getHealthRecords(filters = {}) {
+  const params = new URLSearchParams();
+  if (filters.pond) params.set('pond', filters.pond);
+  if (filters.status) params.set('status', filters.status);
+
+  const query = params.toString();
+  return request(`/fish-health/health-records/${query ? `?${query}` : ''}`);
+}
+
+
+export function createHealthRecord(record) {
+  return request('/fish-health/health-records/', {
+    method: 'POST',
+    body: record,
+  });
+}
+
+
+export function updateHealthRecord(id, record) {
+  return request(`/fish-health/health-records/${id}/`, {
+    method: 'PATCH',
+    body: record,
+  });
+}
+
+
+export function getTreatmentPlans(filters = {}) {
+  const params = new URLSearchParams();
+  if (filters.pond) params.set('pond', filters.pond);
+  if (filters.status) params.set('status', filters.status);
+
+  const query = params.toString();
+  return request(`/fish-health/treatments/${query ? `?${query}` : ''}`);
+}
+
+
+export function createTreatmentPlan(treatment) {
+  return request('/fish-health/treatments/', {
+    method: 'POST',
+    body: treatment,
+  });
+}
+
+
+export function updateTreatmentPlan(id, treatment) {
+  return request(`/fish-health/treatments/${id}/`, {
+    method: 'PATCH',
+    body: treatment,
+  });
+}
+
+
+export function getFishHealthRecommendation(pondId) {
+  const params = new URLSearchParams();
+  if (pondId) params.set('pond', pondId);
+
+  const query = params.toString();
+  return request(`/fish-health/recommendation/${query ? `?${query}` : ''}`);
+}
+
+
+export function getFishHealthAlerts(pondId) {
+  const params = new URLSearchParams();
+  if (pondId) params.set('pond', pondId);
+
+  const query = params.toString();
+  return request(`/fish-health/alerts/${query ? `?${query}` : ''}`);
+}
+
+
+export function markFishHealthAlertsRead(ids = 'all') {
+  return request('/fish-health/alerts/', {
+    method: 'POST',
+    body: { ids },
+  });
+}
+
+
 export function getWaterQualityReadings(filters = {}) {
   const params = new URLSearchParams();
 
@@ -203,6 +300,112 @@ export function compareWaterQualityPonds(pondIds) {
   params.set('ponds', pondIds.join(','));
 
   return request(`/water-quality/compare/?${params.toString()}`);
+}
+
+
+function financialQuery(filters = {}) {
+  const params = new URLSearchParams();
+
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      params.set(key, value);
+    }
+  });
+
+  const query = params.toString();
+  return query ? `?${query}` : '';
+}
+
+
+export function getFinancialDashboard(filters = {}) {
+  return request(`/financials/dashboard/${financialQuery(filters)}`);
+}
+
+
+export function getFinancialTransactions(filters = {}) {
+  return request(`/financials/transactions/${financialQuery(filters)}`);
+}
+
+
+export function createFinancialTransaction(transaction) {
+  return request('/financials/transactions/', {
+    method: 'POST',
+    body: transaction,
+  });
+}
+
+
+export function updateFinancialTransaction(id, transaction) {
+  return request(`/financials/transactions/${id}/`, {
+    method: 'PATCH',
+    body: transaction,
+  });
+}
+
+
+export function deleteFinancialTransaction(id) {
+  return request(`/financials/transactions/${id}/`, {
+    method: 'DELETE',
+  });
+}
+
+
+export function createAutomaticFinancialRecord(record) {
+  return request('/financials/automatic-records/', {
+    method: 'POST',
+    body: record,
+  });
+}
+
+
+export function getExpenseCategories() {
+  return request('/financials/expense-categories/');
+}
+
+
+export function getIncomeCategories() {
+  return request('/financials/income-categories/');
+}
+
+
+export function getFinancialBudgets(filters = {}) {
+  return request(`/financials/budgets/${financialQuery(filters)}`);
+}
+
+
+export function createFinancialBudget(budget) {
+  return request('/financials/budgets/', {
+    method: 'POST',
+    body: budget,
+  });
+}
+
+
+export function getFinancialProfitLoss(filters = {}) {
+  return request(`/financials/profit-loss/${financialQuery(filters)}`);
+}
+
+
+export function getPondFinancialPerformance(filters = {}) {
+  return request(`/financials/pond-performance/${financialQuery(filters)}`);
+}
+
+
+export function getFeedCostAnalysis(filters = {}) {
+  return request(`/financials/feed-cost-analysis/${financialQuery(filters)}`);
+}
+
+
+export function estimateHarvestRevenue(values) {
+  return request('/financials/harvest-revenue-estimator/', {
+    method: 'POST',
+    body: values,
+  });
+}
+
+
+export function getFinancialAnalytics(filters = {}) {
+  return request(`/financials/analytics/${financialQuery(filters)}`);
 }
 
 
