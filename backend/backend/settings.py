@@ -73,6 +73,8 @@ INSTALLED_APPS = [
     'weather',
     'fish_health',
     'financials',
+    'market_analysis',
+    'feeding',
 ]
 
 MIDDLEWARE = [

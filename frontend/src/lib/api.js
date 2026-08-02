@@ -116,6 +116,31 @@ export function logout() {
 }
 
 
+export function getNotifications(options = {}) {
+  const params = new URLSearchParams();
+
+  if (options.unread) params.set('unread', '1');
+  if (options.limit) params.set('limit', options.limit);
+
+  const query = params.toString();
+  return request(`/notifications/${query ? `?${query}` : ''}`);
+}
+
+
+export function markNotificationRead(id) {
+  return request(`/notifications/${id}/read/`, {
+    method: 'PATCH',
+  });
+}
+
+
+export function markNotificationsRead() {
+  return request('/notifications/mark-read/', {
+    method: 'POST',
+  });
+}
+
+
 export function getPonds() {
   return request('/ponds/');
 }
@@ -251,6 +276,39 @@ export function markFishHealthAlertsRead(ids = 'all') {
   return request('/fish-health/alerts/', {
     method: 'POST',
     body: { ids },
+export function getMarketAnalysisDashboard() {
+  return request('/market-analysis/dashboard/');
+}
+
+export function getFeedingDashboard(pondId) {
+  return request(`/feeding/dashboard/?pond=${pondId}`);
+}
+
+
+export function getFeedingHistory(pondId) {
+  return request(`/feeding/history/?pond=${pondId}`);
+}
+
+
+export function acceptFeedingRecommendation(id) {
+  return request(`/feeding/recommendations/${id}/accept/`, {
+    method: 'POST',
+  });
+}
+
+
+export function editFeedingRecommendation(id, recommendation) {
+  return request(`/feeding/recommendations/${id}/edit/`, {
+    method: 'PATCH',
+    body: recommendation,
+  });
+}
+
+
+export function completeFeedingSession(id, session) {
+  return request(`/feeding/sessions/${id}/complete/`, {
+    method: 'POST',
+    body: session,
   });
 }
 

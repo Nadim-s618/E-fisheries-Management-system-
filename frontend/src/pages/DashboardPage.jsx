@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { DashboardSidebar } from '../components/dashboard/DashboardSidebar';
@@ -8,11 +8,13 @@ import { PondManagement } from '../components/dashboard/PondManagement';
 import { StockGrowthManagement } from '../components/dashboard/StockGrowthManagement';
 import FishHealthManagement from '../components/fish_health/FishHealthManagement';
 import FinancialManagement from '../components/financials/FinancialManagement';
+import MarketAnalysis from '../components/market_analysis/MarketAnalysis';
+import FeedingManagement from '../components/feeding/FeedingManagement';
 import WeatherManagement from '../components/weather/WeatherManagement';
 import WaterQualityManagement from '../components/water_quality/WaterQualityManagement';
 import { useAuth } from '../context/useAuth';
+import { getNotifications, markNotificationRead, markNotificationsRead } from '../lib/api';
 import {
-  DASHBOARD_ALERTS,
   DASHBOARD_NAV_ITEMS,
   DASHBOARD_STATS,
 } from '../data/dashboard';
@@ -23,9 +25,43 @@ export default function DashboardPage() {
   const { user, logout } = useAuth();
   const [activeNav, setActiveNav] = useState('water');
   const [pondFormOpenSignal, setPondFormOpenSignal] = useState(0);
+  const [notifications, setNotifications] = useState([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+
+  const loadNotifications = useCallback(async () => {
+    if (!user) {
+      setNotifications([]);
+      return;
+    }
+
+    setNotificationsLoading(true);
+    try {
+      const data = await getNotifications({ unread: true, limit: 20 });
+      setNotifications(data || []);
+    } catch {
+      setNotifications([]);
+    } finally {
+      setNotificationsLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(loadNotifications, 0);
+
+    if (!user) {
+      return () => window.clearTimeout(timer);
+    }
+
+    const interval = window.setInterval(loadNotifications, 30000);
+    return () => {
+      window.clearTimeout(timer);
+      window.clearInterval(interval);
+    };
+  }, [loadNotifications, user]);
 
   async function handleLogout() {
     await logout();
+    setNotifications([]);
     navigate('/');
   }
 
@@ -38,9 +74,43 @@ export default function DashboardPage() {
     setActiveNav('ponds');
   }
 
+  async function handleNotificationRead(notification) {
+    if (!notification?.id) return;
+
+    setNotifications(current => current.filter(item => item.id !== notification.id));
+    try {
+      await markNotificationRead(notification.id);
+    } catch {
+      loadNotifications();
+    }
+  }
+
+  async function handleNotificationsRead() {
+    const previousNotifications = notifications;
+    setNotifications([]);
+    try {
+      await markNotificationsRead();
+    } catch {
+      setNotifications(previousNotifications);
+    }
+  }
+
+  const summaryAlerts = notifications.map(notification => ({
+    pond: notification.pond_name || notification.pond,
+    issue: notification.parameter,
+  }));
+
   return (
     <div className="dp-root">
-      <DashboardTopbar onPondsClick={handleViewPonds} user={user} notifications={DASHBOARD_ALERTS} />
+      <DashboardTopbar
+        onPondsClick={handleViewPonds}
+        onNotificationClick={loadNotifications}
+        onNotificationRead={handleNotificationRead}
+        onNotificationsRead={handleNotificationsRead}
+        user={user}
+        notifications={notifications}
+        notificationsLoading={notificationsLoading}
+      />
 
       <div className="dp-body">
         <DashboardSidebar
@@ -65,9 +135,16 @@ export default function DashboardPage() {
             <WeatherManagement />
           ) : activeNav === 'finance' ? (
             <FinancialManagement />
+            <WaterQualityManagement onNotificationChange={loadNotifications} />
+          ) : activeNav === 'feeding' ? (
+            <FeedingManagement onNotificationChange={loadNotifications} />
+          ) : activeNav === 'weather' ? (
+            <WeatherManagement onNotificationChange={loadNotifications} />
+          ) : activeNav === 'analysis' ? (
+            <MarketAnalysis />
           ) : (
             <>
-              <DashboardSummary alerts={DASHBOARD_ALERTS} stats={DASHBOARD_STATS} />
+              <DashboardSummary alerts={summaryAlerts} stats={DASHBOARD_STATS} />
 
               {/* Hero */}
               <section className="dp-hero">

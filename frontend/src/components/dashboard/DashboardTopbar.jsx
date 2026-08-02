@@ -6,9 +6,12 @@ export function DashboardTopbar({
   onPondsClick,
   onSearchClick,
   onNotificationClick,
+  onNotificationRead,
+  onNotificationsRead,
   onProfileClick,
   user,
   notifications = [],
+  notificationsLoading = false,
 }) {
   const [isSearchActive, setIsSearchActive] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
@@ -44,6 +47,16 @@ export function DashboardTopbar({
   const handleLogout = () => {
     setIsProfileOpen(false);
     onProfileClick?.('logout');
+  };
+
+  const handleNotificationItemClick = async (notification) => {
+    await onNotificationRead?.(notification);
+    setIsNotificationOpen(false);
+  };
+
+  const handleMarkAllRead = async () => {
+    await onNotificationsRead?.();
+    setIsNotificationOpen(false);
   };
 
   return (
@@ -133,20 +146,36 @@ export function DashboardTopbar({
           {isNotificationOpen && (
             <div className="dp-notif-menu" role="menu" aria-label="Notifications">
               <div className="dp-notif-menu-header">
-                <span>Notifications</span>
-                <small>{notificationCount} new</small>
+                <div>
+                  <span>Notifications</span>
+                  <small>{notificationCount} unread</small>
+                </div>
+                {notificationCount > 0 && (
+                  <button type="button" className="dp-notif-clear" onClick={handleMarkAllRead}>
+                    Mark all read
+                  </button>
+                )}
               </div>
               <div className="dp-notif-list">
-                {notifications.length > 0 ? (
+                {notificationsLoading ? (
+                  <div className="dp-notif-menu-empty">Loading notifications...</div>
+                ) : notifications.length > 0 ? (
                   notifications.map((notification, index) => (
                     <button
-                      key={`${notification.pond}-${notification.issue}-${index}`}
+                      key={notification.id || `${notification.pond}-${notification.parameter}-${index}`}
                       type="button"
-                      className="dp-notif-menu-item"
-                      onClick={() => setIsNotificationOpen(false)}
+                      className={`dp-notif-menu-item ${notification.priority ? `priority-${notification.priority.toLowerCase()}` : ''}`}
+                      onClick={() => handleNotificationItemClick(notification)}
                     >
-                      <strong>{notification.pond}</strong>
-                      <span>{notification.issue}</span>
+                      <span className="dp-notif-item-topline">
+                        <strong>{notification.pond_name || notification.pond}</strong>
+                        <small>{notification.priority}</small>
+                      </span>
+                      <span className="dp-notif-issue">
+                        {notification.parameter}
+                        {notification.current_value ? ` · ${notification.current_value}` : ''}
+                      </span>
+                      <span>{notification.reason}</span>
                     </button>
                   ))
                 ) : (
