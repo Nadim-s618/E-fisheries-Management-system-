@@ -71,6 +71,8 @@ INSTALLED_APPS = [
     'growth',
     'water_quality',
     'weather',
+    'fish_health',
+    'financials',
     'market_analysis',
     'feeding',
 ]
