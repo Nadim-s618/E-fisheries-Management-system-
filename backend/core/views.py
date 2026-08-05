@@ -7,6 +7,8 @@ from rest_framework.response import Response
 from .content import HOMEPAGE_CONTENT
 from .models import Notification
 from .serializers import LoginSerializer, NotificationSerializer, SignupSerializer, UserSerializer
+from .services.farm_advisor import get_farm_advice
+from ponds.models import Pond
 
 
 def auth_payload(user, token):
@@ -72,6 +74,23 @@ def notifications(request):
 
     serializer = NotificationSerializer(queryset[:limit], many=True)
     return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def ai_advisor(request):
+    pond_id = request.query_params.get('pond')
+    if not pond_id:
+        return Response({'pond': 'This query parameter is required.'}, status=status.HTTP_400_BAD_REQUEST)
+    if not pond_id.isdigit():
+        return Response({'pond': 'Pond must be a valid numeric id.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    ponds = Pond.objects.all() if request.user.is_staff else Pond.objects.filter(owner=request.user)
+    pond = ponds.filter(pk=pond_id).first()
+    if pond is None:
+        return Response({'pond': 'Pond not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    return Response(get_farm_advice(pond))
 
 
 @api_view(['PATCH', 'POST'])

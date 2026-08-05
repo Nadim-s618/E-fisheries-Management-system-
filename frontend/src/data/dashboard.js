@@ -1,4 +1,5 @@
 export const DASHBOARD_NAV_ITEMS = [
+  { id: 'advisor', label: 'AI Advisor', icon: 'M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6L12 3zM5 17l.8 2.2L8 20l-2.2.8L5 23l-.8-2.2L2 20l2.2-.8L5 17z' },
   { id: 'water', label: 'Water Quality', icon: 'M12 2C8 6 4 9 4 13a8 8 0 0016 0c0-4-4-7-8-11z' },
   { id: 'feeding', label: 'Fish Feeding', icon: 'M3 12h18M3 6l9-3 9 3M3 18l9 3 9-3' },
   { id: 'health', label: 'Fish Health', icon: 'M12 21C7 17 3 13.5 3 9a5 5 0 0110 0 5 5 0 0110 0c0 4.5-4 8-9 12z' },

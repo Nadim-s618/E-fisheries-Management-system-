@@ -6,6 +6,7 @@ import { DashboardSummary } from '../components/dashboard/DashboardSummary';
 import { DashboardTopbar } from '../components/dashboard/DashboardTopbar';
 import { PondManagement } from '../components/dashboard/PondManagement';
 import { StockGrowthManagement } from '../components/dashboard/StockGrowthManagement';
+import AiAdvisorManagement from '../components/ai_advisor/AiAdvisorManagement';
 import FishHealthManagement from '../components/fish_health/FishHealthManagement';
 import FinancialManagement from '../components/financials/FinancialManagement';
 import MarketAnalysis from '../components/market_analysis/MarketAnalysis';
@@ -125,6 +126,8 @@ export default function DashboardPage() {
         <main className="dp-main">
           {activeNav === 'ponds' ? (
             <PondManagement key={pondFormOpenSignal} openOnMount={pondFormOpenSignal > 0} />
+          ) : activeNav === 'advisor' ? (
+            <AiAdvisorManagement />
           ) : activeNav === 'stock' ? (
             <StockGrowthManagement />
           ) : activeNav === 'water' ? (
@@ -135,6 +138,10 @@ export default function DashboardPage() {
             <WeatherManagement />
           ) : activeNav === 'finance' ? (
             <FinancialManagement />
+            <>
+              <FinancialManagement />
+              <WaterQualityManagement onNotificationChange={loadNotifications} />
+            </>
           ) : activeNav === 'feeding' ? (
             <FeedingManagement onNotificationChange={loadNotifications} />
           ) : activeNav === 'weather' ? (

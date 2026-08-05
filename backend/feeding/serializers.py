@@ -44,6 +44,7 @@ class FeedingRecommendationSerializer(serializers.ModelSerializer):
     pond_name = serializers.CharField(source='pond.name', read_only=True)
     sessions = FeedingSessionSerializer(many=True, read_only=True)
     computed_status = serializers.SerializerMethodField()
+    ai_advice = serializers.SerializerMethodField()
 
     class Meta:
         model = FeedingRecommendation
@@ -59,6 +60,7 @@ class FeedingRecommendationSerializer(serializers.ModelSerializer):
             'meals',
             'schedule',
             'reasons',
+            'ai_advice',
             'input_summary',
             'status',
             'computed_status',
@@ -78,6 +80,9 @@ class FeedingRecommendationSerializer(serializers.ModelSerializer):
         if any(session.status == FeedingSession.Status.COMPLETED for session in sessions):
             return 'In Progress'
         return recommendation.get_status_display()
+
+    def get_ai_advice(self, recommendation):
+        return (recommendation.input_summary or {}).get('ai_advice', {})
 
 
 class FeedingRecommendationEditSerializer(serializers.Serializer):

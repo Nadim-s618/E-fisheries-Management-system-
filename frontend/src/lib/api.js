@@ -279,6 +279,11 @@ export function markFishHealthAlertsRead(ids = 'all') {
   });
 }
 
+
+export function getAiAdvisor(pondId) {
+  return request(`/ai-advisor/?pond=${pondId}`);
+}
+
 export function getMarketAnalysisDashboard() {
   return request('/market-analysis/dashboard/');
 }

@@ -1,9 +1,11 @@
-from datetime import datetime, time, timedelta
+import json
+from datetime import date, datetime, time, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 
 from django.db.models import Sum
 from django.utils import timezone
 
+from core.services.gemini import GeminiError, generate_json_response, is_gemini_configured
 from growth.models import GrowthRecord
 from stocks.models import FishStock
 from water_quality.models import WaterQualityReading
@@ -78,7 +80,7 @@ def build_recommendation_payload(pond, recommendation_date):
     schedule = build_schedule(recommendation_date, recommended_feed, meal_times)
     price_per_kg = DEFAULT_PRICE_PER_KG
 
-    return {
+    payload = {
         'recommendation_date': recommendation_date,
         'recommended_feed_kg': recommended_feed,
         'feed_type': DEFAULT_FEED_TYPE,
@@ -94,6 +96,156 @@ def build_recommendation_payload(pond, recommendation_date):
             'feeding_history': serialize_decimals(history_summary),
         },
     }
+    return enhance_payload_with_ai(pond, payload)
+
+
+def enhance_payload_with_ai(pond, payload):
+    ai_advice = get_feeding_ai_advice(pond, payload)
+    payload['input_summary']['ai_advice'] = ai_advice
+
+    if ai_advice['source'] != 'gemini':
+        return payload
+
+    feed_kg = parse_decimal(ai_advice.get('recommended_feed_kg'))
+    if feed_kg is not None and feed_kg > 0:
+        base_feed = Decimal(payload['recommended_feed_kg'])
+        lower_bound = base_feed * Decimal('0.75')
+        upper_bound = base_feed * Decimal('1.25')
+        payload['recommended_feed_kg'] = kg(min(max(feed_kg, lower_bound), upper_bound))
+
+    if ai_advice.get('feed_type'):
+        payload['feed_type'] = str(ai_advice['feed_type'])[:120]
+
+    meals = parse_int(ai_advice.get('meals'))
+    meal_times = normalize_meal_times(ai_advice.get('meal_times'))
+    if meals and 1 <= meals <= 4:
+        payload['meals'] = meals
+        if len(meal_times) != meals:
+            fallback_times = DEFAULT_MEAL_TIMES + ['12:30', '18:30']
+            meal_times = fallback_times[:meals] if meals > 1 else REDUCED_MEAL_TIMES
+        payload['schedule'] = build_schedule(payload['recommendation_date'], payload['recommended_feed_kg'], meal_times)
+    else:
+        payload['schedule'] = build_schedule(
+            payload['recommendation_date'],
+            payload['recommended_feed_kg'],
+            [item['time'] for item in payload['schedule']],
+        )
+
+    payload['estimated_cost'] = kg(payload['recommended_feed_kg'] * payload['price_per_kg'])
+
+    ai_reasons = normalize_text_list(ai_advice.get('reasons'))
+    if ai_reasons:
+        payload['reasons'] = ai_reasons[:5]
+
+    return payload
+
+
+def get_feeding_ai_advice(pond, payload):
+    fallback = {
+        'source': 'fallback',
+        'ai_enabled': False,
+        'explanation': 'Formula-based feeding recommendation generated from stock, water quality, weather, and recent feeding history.',
+        'recommendations': [
+            'Follow the calculated ration and observe appetite during each meal.',
+            'Reduce feeding if fish are stressed, oxygen is low, or uneaten feed remains.',
+        ],
+        'cautions': [],
+    }
+
+    if not is_gemini_configured():
+        return fallback
+
+    try:
+        ai_advice = generate_json_response(build_feeding_prompt(pond, payload), max_output_tokens=900)
+    except (GeminiError, TypeError, ValueError):
+        return fallback
+
+    return {
+        'source': 'gemini',
+        'ai_enabled': True,
+        'explanation': str(ai_advice.get('explanation') or fallback['explanation']).strip(),
+        'recommended_feed_kg': ai_advice.get('recommended_feed_kg'),
+        'feed_type': str(ai_advice.get('feed_type') or '').strip(),
+        'meals': ai_advice.get('meals'),
+        'meal_times': normalize_meal_times(ai_advice.get('meal_times')),
+        'reasons': normalize_text_list(ai_advice.get('reasons')) or payload['reasons'],
+        'recommendations': normalize_text_list(ai_advice.get('recommendations')) or fallback['recommendations'],
+        'cautions': normalize_text_list(ai_advice.get('cautions')),
+    }
+
+
+def build_feeding_prompt(pond, payload):
+    prompt_data = {
+        'pond': {
+            'name': pond.name,
+            'location': pond.location,
+            'area_decimal': str(pond.area_decimal),
+            'average_depth_ft': str(pond.average_depth_ft),
+            'water_source': pond.water_source,
+            'stocking_capacity': pond.stocking_capacity,
+        },
+        'formula_recommendation': serialize_decimals(payload),
+    }
+
+    return (
+        'You are an aquaculture feeding advisor. Use English only. '
+        'Use the formula recommendation as the safe baseline and adjust only when the provided stock, '
+        'water quality, weather, or feeding history strongly supports it. '
+        'Return JSON with keys: explanation, recommended_feed_kg, feed_type, meals, meal_times, '
+        'reasons, recommendations, cautions. meal_times must be HH:MM strings. '
+        'Keep recommendations practical and do not suggest medicine. '
+        f'Data: {serialize_for_prompt(prompt_data)}'
+    )
+
+
+def parse_decimal(value):
+    if value in (None, ''):
+        return None
+    try:
+        return Decimal(str(value))
+    except Exception:
+        return None
+
+
+def parse_int(value):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def normalize_meal_times(values):
+    if not isinstance(values, list):
+        return []
+
+    meal_times = []
+    for value in values:
+        text = str(value).strip()
+        parts = text.split(':')
+        if len(parts) != 2:
+            continue
+        if parts[0].isdigit() and parts[1].isdigit():
+            hour = int(parts[0])
+            minute = int(parts[1])
+            if 0 <= hour <= 23 and 0 <= minute <= 59:
+                meal_times.append(f'{hour:02d}:{minute:02d}')
+
+    return meal_times[:4]
+
+
+def normalize_text_list(values):
+    if not isinstance(values, list):
+        return []
+
+    return [
+        str(value).strip()
+        for value in values
+        if str(value).strip()
+    ]
+
+
+def serialize_for_prompt(value):
+    return json.dumps(serialize_decimals(value))
 
 
 def get_stock_summary(pond):
@@ -305,8 +457,12 @@ def format_time_label(meal_time):
 def serialize_decimals(value):
     if isinstance(value, dict):
         return {key: serialize_decimals(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [serialize_decimals(item) for item in value]
     if isinstance(value, Decimal):
         return str(kg(value))
+    if isinstance(value, (date, datetime)):
+        return value.isoformat()
     return value
 
 

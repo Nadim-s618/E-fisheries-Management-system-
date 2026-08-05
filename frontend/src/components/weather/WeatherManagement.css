@@ -6,14 +6,14 @@
   --wm-muted: #64786f;
   --wm-green: #16725b;
   --wm-blue: #1f6fb8;
-  --wm-gold: #b8790b;
-  --wm-danger: #be3328;
-  --wm-good-bg: #e7f7ec;
+  --wm-gold: #9b6406;
+  --wm-danger: #903731;
+  --wm-good-bg: #b5b5b5;
   --wm-warning-bg: #fff2d7;
   --wm-danger-bg: #fde7e3;
 
   width: 100%;
-  max-width: 1180px;
+  max-width: 1190px;
   margin: 0 auto;
   padding: 24px;
   color: var(--wm-ink);
