@@ -11,13 +11,41 @@ User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
+    market_profile = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'first_name', 'last_name', 'full_name')
+        fields = (
+            'id',
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            'full_name',
+            'market_profile',
+            'is_staff',
+        )
 
     def get_full_name(self, user):
         return user.get_full_name() or user.username
+
+    def get_market_profile(self, user):
+        profile = getattr(user, 'market_profile', None)
+        if not profile:
+            return {
+                'role': 'both',
+                'role_display': 'Buyer and seller',
+                'can_buy': True,
+                'can_sell': True,
+                'is_approved': True,
+            }
+        return {
+            'role': profile.role,
+            'role_display': profile.get_role_display(),
+            'can_buy': profile.can_buy,
+            'can_sell': profile.can_sell,
+            'is_approved': profile.is_approved,
+        }
 
 
 class SignupSerializer(serializers.Serializer):
