@@ -138,14 +138,8 @@ export default function DashboardPage() {
             <WeatherManagement />
           ) : activeNav === 'finance' ? (
             <FinancialManagement />
-            <>
-              <FinancialManagement />
-              <WaterQualityManagement onNotificationChange={loadNotifications} />
-            </>
           ) : activeNav === 'feeding' ? (
             <FeedingManagement onNotificationChange={loadNotifications} />
-          ) : activeNav === 'weather' ? (
-            <WeatherManagement onNotificationChange={loadNotifications} />
           ) : activeNav === 'analysis' ? (
             <MarketAnalysis />
           ) : (
