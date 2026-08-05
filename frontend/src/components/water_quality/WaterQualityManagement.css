@@ -456,6 +456,13 @@
   gap: 16px;
 }
 
+.wqm-advice-summary {
+  margin: 0 0 16px;
+  color: var(--wqm-muted);
+  line-height: 1.6;
+  font-size: 14px;
+}
+
 .wqm-advice-card {
   border: 1px solid var(--wqm-border);
   border-radius: 16px;
