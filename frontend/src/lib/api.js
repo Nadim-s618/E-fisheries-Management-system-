@@ -51,9 +51,10 @@ function getErrorMessage(data) {
 
 async function request(path, options = {}) {
   const token = getStoredToken();
+  const isFormData = options.body instanceof FormData;
   const headers = {
     Accept: 'application/json',
-    ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+    ...(options.body && !isFormData ? { 'Content-Type': 'application/json' } : {}),
     ...(token ? { Authorization: `Token ${token}` } : {}),
     ...options.headers,
   };
@@ -61,7 +62,7 @@ async function request(path, options = {}) {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers,
-    body: options.body ? JSON.stringify(options.body) : undefined,
+    body: options.body ? (isFormData ? options.body : JSON.stringify(options.body)) : undefined,
   });
 
   const text = await response.text();
@@ -286,6 +287,89 @@ export function getAiAdvisor(pondId) {
 
 export function getMarketAnalysisDashboard() {
   return request('/market-analysis/dashboard/');
+}
+
+export function getMarketProfile() {
+  return request('/market-bridge/profile/');
+}
+
+export function updateMarketProfile(profile) {
+  return request('/market-bridge/profile/', {
+    method: 'PATCH',
+    body: profile,
+  });
+}
+
+export function getMarketListings(filters = {}) {
+  const params = new URLSearchParams();
+  if (filters.mine) params.set('mine', '1');
+  const query = params.toString();
+  return request(`/market-bridge/listings/${query ? `?${query}` : ''}`);
+}
+
+export function createMarketListing(listing) {
+  return request('/market-bridge/listings/', {
+    method: 'POST',
+    body: listing,
+  });
+}
+
+export function updateMarketListing(id, listing) {
+  return request(`/market-bridge/listings/${id}/`, {
+    method: 'PATCH',
+    body: listing,
+  });
+}
+
+export function deleteMarketListing(id) {
+  return request(`/market-bridge/listings/${id}/`, {
+    method: 'DELETE',
+  });
+}
+
+export function getMarketOrders() {
+  return request('/market-bridge/orders/');
+}
+
+export function createMarketOrder(order) {
+  return request('/market-bridge/orders/', {
+    method: 'POST',
+    body: order,
+  });
+}
+
+export function acceptMarketOrder(id, body = {}) {
+  return request(`/market-bridge/orders/${id}/accept/`, {
+    method: 'POST',
+    body,
+  });
+}
+
+export function rejectMarketOrder(id, body = {}) {
+  return request(`/market-bridge/orders/${id}/reject/`, {
+    method: 'POST',
+    body,
+  });
+}
+
+export function completeMarketOrder(id, body = {}) {
+  return request(`/market-bridge/orders/${id}/complete/`, {
+    method: 'POST',
+    body,
+  });
+}
+
+export function cancelMarketOrder(id) {
+  return request(`/market-bridge/orders/${id}/cancel/`, {
+    method: 'POST',
+  });
+}
+
+export function getMarketPriceRecommendation(values = {}) {
+  return request('/market-bridge/price-recommendation/', {
+    method: 'POST',
+    body: values,
+  });
 }
 
 export function getFeedingDashboard(pondId) {

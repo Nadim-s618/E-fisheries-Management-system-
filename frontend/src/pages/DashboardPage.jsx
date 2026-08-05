@@ -10,6 +10,7 @@ import AiAdvisorManagement from '../components/ai_advisor/AiAdvisorManagement';
 import FishHealthManagement from '../components/fish_health/FishHealthManagement';
 import FinancialManagement from '../components/financials/FinancialManagement';
 import MarketAnalysis from '../components/market_analysis/MarketAnalysis';
+import MarketBridge from '../components/market_bridge/MarketBridge';
 import FeedingManagement from '../components/feeding/FeedingManagement';
 import WeatherManagement from '../components/weather/WeatherManagement';
 import WaterQualityManagement from '../components/water_quality/WaterQualityManagement';
@@ -142,6 +143,8 @@ export default function DashboardPage() {
             <FeedingManagement onNotificationChange={loadNotifications} />
           ) : activeNav === 'analysis' ? (
             <MarketAnalysis />
+          ) : activeNav === 'market' ? (
+            <MarketBridge />
           ) : (
             <>
               <DashboardSummary alerts={summaryAlerts} stats={DASHBOARD_STATS} />
