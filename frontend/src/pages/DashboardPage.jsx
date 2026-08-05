@@ -137,6 +137,7 @@ export default function DashboardPage() {
           ) : activeNav === 'weather' ? (
             <WeatherManagement />
           ) : activeNav === 'finance' ? (
+            <FinancialManagement />
             <>
               <FinancialManagement />
               <WaterQualityManagement onNotificationChange={loadNotifications} />

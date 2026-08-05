@@ -11,14 +11,6 @@ export default function HomePage() {
   const { user, logout } = useAuth();
   const heroLead = content?.hero.title.replace(content.hero.accent, '').trim();
 
-  function getNavTarget(link) {
-    if (link.toLowerCase() === 'dashboard') {
-      return '/dashboard';
-    }
-
-    return `#${link.toLowerCase()}`;
-  }
-
   useEffect(() => {
     let isMounted = true;
 
@@ -79,18 +71,13 @@ export default function HomePage() {
           <ul className="nav-links">
             {content.navLinks.map(link => (
               <li key={link}>
-                {link.toLowerCase() === 'dashboard' ? (
-                  <Link to={getNavTarget(link)}>{link}</Link>
-                ) : (
-                  <a href={getNavTarget(link)}>{link}</a>
-                )}
+                <a href={`#${link.toLowerCase()}`}>{link}</a>
               </li>
             ))}
           </ul>
           {user ? (
             <div className="nav-auth">
               <span className="nav-user">Hi, {user.first_name || user.username}</span>
-              <Link to="/dashboard" className="btn-nav">Dashboard</Link>
               <button type="button" className="btn-nav" onClick={logout}>Sign Out</button>
             </div>
           ) : (
@@ -179,19 +166,63 @@ export default function HomePage() {
 
       {/* ── Footer ── */}
       <footer className="footer">
-        <div className="footer-inner">
-          <span className="logo logo-footer">
-            <img src="/logo.png" alt="E-Fisheries logo" className="logo-icon" />
-            <span className="logo-text">
-              <span className="logo-name">E-Fisheries</span>
-              <span className="logo-sub">Management System</span>
+        <div className="footer-inner footer-grid">
+
+          <div className="footer-col footer-brand">
+            <span className="logo logo-footer">
+              <img src="/logo.png" alt="E-Fisheries logo" className="logo-icon" />
+              <span className="logo-text">
+                <span className="logo-name">E-Fisheries</span>
+                <span className="logo-sub">Management System</span>
+              </span>
             </span>
-          </span>
-          <p className="footer-copy">© 2026 E-Fisheries. E-Fisheries Management System.</p>
-          <ul className="footer-links">
-            <li><a href="#features">Features</a></li>
-            <li><a href="#about">About</a></li>
-            <li><Link to="/login">Sign in</Link></li>
+            <p className="footer-tagline">
+              A complete platform for fish farmers, pond managers, investors,
+              and consultants to monitor, plan, and grow their operations.
+            </p>
+          </div>
+
+          <div className="footer-col">
+            <h4 className="footer-heading">Quick Links</h4>
+            <ul className="footer-links">
+              <li><a href="#home">Home</a></li>
+              <li><a href="#features">Features</a></li>
+              <li><a href="#about">About</a></li>
+              {!user && (
+                <>
+                  <li><Link to="/login">Sign in</Link></li>
+                  <li><Link to="/signup">Sign up</Link></li>
+                </>
+              )}
+            </ul>
+          </div>
+
+          <div className="footer-col">
+            <h4 className="footer-heading">Resources</h4>
+            <ul className="footer-links">
+              <li><a href="#features">Water Quality Monitoring</a></li>
+              <li><a href="#features">Feeding Management</a></li>
+              <li><a href="#features">Pond &amp; Stock Tracking</a></li>
+            </ul>
+          </div>
+
+          <div className="footer-col">
+            <h4 className="footer-heading">Contact</h4>
+            <ul className="footer-contact">
+              <li>
+                <a href="mailto:support@efisheries.example">support@efisheries.example</a>
+              </li>
+              <li>Dhaka, Bangladesh</li>
+            </ul>
+          </div>
+
+        </div>
+
+        <div className="footer-bottom">
+          <p className="footer-copy">© 2026 E-Fisheries. All rights reserved.</p>
+          <ul className="footer-legal">
+            <li><a href="#privacy">Privacy Policy</a></li>
+            <li><a href="#terms">Terms of Service</a></li>
           </ul>
         </div>
       </footer>
