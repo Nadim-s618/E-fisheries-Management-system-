@@ -276,6 +276,14 @@ export function markFishHealthAlertsRead(ids = 'all') {
   return request('/fish-health/alerts/', {
     method: 'POST',
     body: { ids },
+  });
+}
+
+
+export function getAiAdvisor(pondId) {
+  return request(`/ai-advisor/?pond=${pondId}`);
+}
+
 export function getMarketAnalysisDashboard() {
   return request('/market-analysis/dashboard/');
 }

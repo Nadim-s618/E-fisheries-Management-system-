@@ -1,5 +1,7 @@
+import json
 import re
 
+from core.services.gemini import GeminiError, generate_text_response, is_gemini_configured
 from fish_health.models import DiseaseProfile, HealthRecord
 from fish_health.services.water_quality.context import get_water_quality_risk_notes
 from fish_health.services.weather.context import get_weather_risk_notes
@@ -162,7 +164,62 @@ def build_ai_recommendation(record, possible_diseases):
         lines.append('Latest weather data does not indicate a major disease trigger.')
 
     lines.append('Confirm diagnosis before applying medicine; use approved aquaculture treatments and local dosage guidance.')
-    return ' '.join(lines)
+    fallback = ' '.join(lines)
+    return get_gemini_health_recommendation(
+        record=record,
+        possible_diseases=possible_diseases,
+        water_notes=water_notes,
+        weather_notes=weather_notes,
+        fallback=fallback,
+    )
+
+
+def get_gemini_health_recommendation(*, record, possible_diseases, water_notes, weather_notes, fallback):
+    if not is_gemini_configured():
+        return fallback
+
+    try:
+        recommendation = generate_text_response(
+            build_health_prompt(record, possible_diseases, water_notes, weather_notes, fallback),
+            temperature=0.2,
+            max_output_tokens=750,
+        )
+    except GeminiError:
+        return fallback
+
+    recommendation = ' '.join(recommendation.split())
+    return recommendation or fallback
+
+
+def build_health_prompt(record, possible_diseases, water_notes, weather_notes, fallback):
+    prompt_data = {
+        'health_record': {
+            'pond': record.pond.name,
+            'species': record.species,
+            'observed_at': record.observed_at.isoformat() if record.observed_at else None,
+            'symptoms': record.symptoms,
+            'symptom_notes': record.symptom_notes,
+            'abnormal_behavior': record.abnormal_behavior,
+            'affected_count': record.affected_count,
+            'mortality_count': record.mortality_count,
+            'severity': record.severity,
+        },
+        'possible_diseases': possible_diseases,
+        'water_quality_snapshot': record.water_quality_snapshot,
+        'weather_snapshot': record.weather_snapshot,
+        'water_risk_notes': water_notes,
+        'weather_risk_notes': weather_notes,
+        'rule_based_recommendation': fallback,
+    }
+
+    return (
+        'You are an aquaculture fish health advisor. Use English only. '
+        'Use the rule-based disease matches and environmental context as evidence. '
+        'Write one concise recommendation paragraph for the farmer. Include immediate actions, '
+        'monitoring, treatment caution, and when to escalate to a local aquaculture expert. '
+        'Do not claim a confirmed diagnosis. Do not invent unavailable lab results or exact drug dosages. '
+        f'Data: {json.dumps(prompt_data)}'
+    )
 
 
 def find_environment_matches(triggers, water_quality_snapshot, weather_snapshot):

@@ -64,10 +64,6 @@ function statusClass(status) {
   return String(status || 'empty').toLowerCase();
 }
 
-function getRiskCards(dashboard) {
-  return (dashboard?.parameter_cards || []).filter(card => card.status !== 'Good');
-}
-
 export function TrendArrow({ value }) {
   return <span className={`wqm-trend wqm-trend-${value === '↑' ? 'up' : value === '↓' ? 'down' : 'flat'}`}>{value || '→'}</span>;
 }
@@ -340,35 +336,48 @@ export function PondComparison({ ponds, selectedIds, onSelectionChange, comparis
 }
 
 export function AIAdvicePanel({ dashboard }) {
-  const risks = getRiskCards(dashboard);
+  const advice = dashboard?.ai_advice;
 
   if (!dashboard) return <PanelState>Select a pond with readings to view recommendations.</PanelState>;
-  if (!risks.length) {
+
+  return (
+    <section className="wqm-panel">
+      <div className="wqm-panel-header">
+        <div>
+          <span>{advice?.ai_enabled ? 'Gemini AI Advisor' : 'Fallback Advisor'}</span>
+          <h2>Water Quality Recommendations</h2>
+        </div>
+        <StatusPill status={dashboard.overall_status} />
+      </div>
+
+      <p className="wqm-advice-summary">{advice?.explanation || 'No advice available for the latest reading.'}</p>
+
+      <div className="wqm-advice-grid">
+        <AdviceBlock title="Recommendations" items={advice?.recommendations} />
+        <AdviceBlock title="Preventive Actions" items={advice?.preventive_actions} />
+        <AdviceBlock title="Emergency Actions" items={advice?.emergency_actions} />
+      </div>
+    </section>
+  );
+}
+
+function AdviceBlock({ title, items }) {
+  if (!items?.length) {
     return (
-      <section className="wqm-panel">
-        <div className="wqm-panel-header"><div><span>AI Advisor</span><h2>Recommendations</h2></div></div>
-        <PanelState type="success">All latest parameters are Good. Continue routine monitoring and record readings consistently.</PanelState>
-      </section>
+      <article className="wqm-advice-card">
+        <div className="wqm-card-top"><span>{title}</span></div>
+        <p>No urgent items.</p>
+      </article>
     );
   }
 
   return (
-    <section className="wqm-advice-grid">
-      {risks.map(card => (
-        <article key={card.parameter} className={`wqm-advice-card wqm-card-${statusClass(card.status)}`}>
-          <div className="wqm-card-top">
-            <span>{labelFor(card.parameter)}</span>
-            <StatusPill status={card.status} />
-          </div>
-          <p>{labelFor(card.parameter)} is {card.status.toLowerCase()} at {formatValue(card.current_value, unitFor(card.parameter))}. Normal range is {card.normal_range}.</p>
-          <ul>
-            <li>Retest this parameter before making major changes.</li>
-            <li>Reduce feeding pressure and improve aeration when fish show stress.</li>
-            {card.status === 'Danger' && <li>Prepare immediate corrective action and monitor fish behavior closely.</li>}
-          </ul>
-        </article>
-      ))}
-    </section>
+    <article className="wqm-advice-card">
+      <div className="wqm-card-top"><span>{title}</span></div>
+      <ul>
+        {items.map(item => <li key={item}>{item}</li>)}
+      </ul>
+    </article>
   );
 }
 

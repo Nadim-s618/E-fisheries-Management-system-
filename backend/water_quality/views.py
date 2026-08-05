@@ -9,9 +9,14 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 
 from ponds.models import Pond
+from feeding.models import FeedingRecommendation
+from growth.models import GrowthRecord
+from stocks.models import FishStock
+from weather.models import WeatherReport
 
 from .models import WaterQualityReading
 from .serializers import WaterQualityReadingSerializer
+from .services.ai_advisor import get_water_quality_advice
 from .services.analyser import analyse_water_quality
 from .services.notification_service import create_water_quality_notifications
 from .utils.thresholds import STATUS_DANGER, STATUS_GOOD, STATUS_WARNING
@@ -137,6 +142,10 @@ class WaterQualityDashboardView(APIView):
             'danger_count': self.count_status(parameter_cards, STATUS_DANGER),
             'warning_count': self.count_status(parameter_cards, STATUS_WARNING),
             'good_count': self.count_status(parameter_cards, STATUS_GOOD),
+            'ai_advice': get_water_quality_advice(
+                analysis,
+                self.build_advisor_context(latest_reading, readings),
+            ),
         })
 
     def count_status(self, parameter_cards, status_name):
@@ -145,6 +154,61 @@ class WaterQualityDashboardView(APIView):
             for parameter in parameter_cards
             if parameter['status'] == status_name
         )
+
+    def build_advisor_context(self, latest_reading, readings):
+        pond = latest_reading.pond
+        active_stocks = FishStock.objects.filter(
+            pond=pond,
+            status=FishStock.Status.ACTIVE,
+            current_quantity__gt=0,
+        )
+        latest_growth = (
+            GrowthRecord.objects
+            .filter(stock__in=active_stocks)
+            .order_by('-recorded_date', '-id')
+            .first()
+        )
+        latest_weather = (
+            WeatherReport.objects
+            .filter(pond=pond)
+            .order_by('-observed_at', '-created_at')
+            .first()
+        )
+        latest_feeding = (
+            FeedingRecommendation.objects
+            .filter(pond=pond)
+            .order_by('-recommendation_date', '-created_at')
+            .first()
+        )
+
+        return {
+            'pond': {
+                'name': pond.name,
+                'location': pond.location,
+                'area_decimal': str(pond.area_decimal),
+                'average_depth_ft': str(pond.average_depth_ft),
+                'water_source': pond.water_source,
+                'stocking_capacity': pond.stocking_capacity,
+            },
+            'stock': {
+                'active_batches': active_stocks.count(),
+                'current_quantity': sum(stock.current_quantity for stock in active_stocks),
+                'latest_average_weight_g': str(latest_growth.average_weight_g) if latest_growth else None,
+                'latest_growth_date': latest_growth.recorded_date.isoformat() if latest_growth else None,
+            },
+            'weather': {
+                'fish_weather_risk': latest_weather.fish_weather_risk if latest_weather else None,
+                'disease_risk': latest_weather.disease_risk if latest_weather else None,
+                'air_temperature': latest_weather.air_temperature if latest_weather else None,
+                'rainfall_probability': latest_weather.rainfall_probability if latest_weather else None,
+            },
+            'feeding': {
+                'recommended_feed_kg': str(latest_feeding.recommended_feed_kg) if latest_feeding else None,
+                'meals': latest_feeding.meals if latest_feeding else None,
+                'status': latest_feeding.status if latest_feeding else None,
+            },
+            'recent_reading_count': readings.count(),
+        }
 
 
 class WaterQualityHistoricalBaseView(APIView):

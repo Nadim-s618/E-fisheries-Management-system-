@@ -55,6 +55,7 @@ function PanelState({ type = 'empty', children }) {
 function RecommendationCard({ recommendation, onAccept, onEdit, saving }) {
   if (!recommendation) return <PanelState>No feeding recommendation available.</PanelState>;
   const isDraft = recommendation.status === 'draft';
+  const aiAdvice = recommendation.ai_advice || {};
 
   return (
     <section className="ff-recommendation" aria-label="Today's feeding recommendation">
@@ -101,6 +102,21 @@ function RecommendationCard({ recommendation, onAccept, onEdit, saving }) {
         {(recommendation.reasons || []).map(reason => (
           <p key={reason}><span aria-hidden="true">{'\u2713'}</span>{reason}</p>
         ))}
+      </div>
+
+      <div className="ff-ai-advice">
+        <span>{aiAdvice.ai_enabled ? 'Gemini AI Advice' : 'Fallback Advice'}</span>
+        <p>{aiAdvice.explanation || 'Recommendation generated from available pond records.'}</p>
+        {!!aiAdvice.recommendations?.length && (
+          <ul>
+            {aiAdvice.recommendations.map(item => <li key={item}>{item}</li>)}
+          </ul>
+        )}
+        {!!aiAdvice.cautions?.length && (
+          <ul className="ff-ai-cautions">
+            {aiAdvice.cautions.map(item => <li key={item}>{item}</li>)}
+          </ul>
+        )}
       </div>
 
       <div className="ff-actions">
