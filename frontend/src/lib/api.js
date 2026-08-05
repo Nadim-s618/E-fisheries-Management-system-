@@ -276,6 +276,9 @@ export function markFishHealthAlertsRead(ids = 'all') {
   return request('/fish-health/alerts/', {
     method: 'POST',
     body: { ids },
+  });
+}
+
 export function getMarketAnalysisDashboard() {
   return request('/market-analysis/dashboard/');
 }
