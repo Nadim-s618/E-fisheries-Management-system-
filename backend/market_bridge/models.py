@@ -163,6 +163,9 @@ class MarketOrder(models.Model):
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
     total_price = models.DecimalField(max_digits=12, decimal_places=2)
     status = models.CharField(max_length=16, choices=Status.choices, default=Status.PENDING)
+    buyer_full_name = models.CharField(max_length=140, default='')
+    buyer_address = models.CharField(max_length=260, default='')
+    buyer_contact_number = models.CharField(max_length=40, default='')
     buyer_note = models.TextField(blank=True)
     seller_note = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -196,6 +199,12 @@ class MarketOrder(models.Model):
             errors['quantity_kg'] = 'Quantity must be greater than zero.'
         if self.listing_id and self.quantity_kg and self.quantity_kg > self.listing.available_quantity_kg:
             errors['quantity_kg'] = 'Requested quantity is not available.'
+        if not self.buyer_full_name.strip():
+            errors['buyer_full_name'] = 'Full name is required.'
+        if not self.buyer_address.strip():
+            errors['buyer_address'] = 'Full address is required.'
+        if not self.buyer_contact_number.strip():
+            errors['buyer_contact_number'] = 'Contact number is required.'
 
         if errors:
             raise ValidationError(errors)

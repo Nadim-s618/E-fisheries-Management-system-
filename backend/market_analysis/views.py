@@ -9,4 +9,5 @@ class MarketAnalysisDashboardView(APIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request):
-        return Response(build_market_dashboard())
+        force_refresh = request.query_params.get('refresh') in {'1', 'true', 'yes'}
+        return Response(build_market_dashboard(force_refresh=force_refresh))

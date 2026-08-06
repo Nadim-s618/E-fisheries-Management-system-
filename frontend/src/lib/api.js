@@ -285,8 +285,12 @@ export function getAiAdvisor(pondId) {
   return request(`/ai-advisor/?pond=${pondId}`);
 }
 
-export function getMarketAnalysisDashboard() {
-  return request('/market-analysis/dashboard/');
+export function getMarketAnalysisDashboard(options = {}) {
+  const params = new URLSearchParams();
+  if (options.refresh) params.set('refresh', '1');
+
+  const query = params.toString();
+  return request(`/market-analysis/dashboard/${query ? `?${query}` : ''}`);
 }
 
 export function getMarketProfile() {
