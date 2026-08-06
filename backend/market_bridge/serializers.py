@@ -187,6 +187,9 @@ class MarketOrderSerializer(serializers.ModelSerializer):
             'total_price',
             'status',
             'status_display',
+            'buyer_full_name',
+            'buyer_address',
+            'buyer_contact_number',
             'buyer_note',
             'seller_note',
             'created_at',
@@ -223,10 +226,42 @@ class MarketOrderSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Quantity must be greater than zero.')
         return value
 
+    def validate_buyer_full_name(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError('Full name is required.')
+        return value
+
+    def validate_buyer_address(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError('Full address is required.')
+        return value
+
+    def validate_buyer_contact_number(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError('Contact number is required.')
+        return value
+
     def validate(self, attrs):
         request = self.context.get('request')
         listing = attrs.get('listing')
         quantity = attrs.get('quantity_kg')
+
+        required_buyer_fields = {
+            'buyer_full_name': 'Full name is required.',
+            'buyer_address': 'Full address is required.',
+            'buyer_contact_number': 'Contact number is required.',
+        }
+        if self.instance is None:
+            missing_fields = {
+                field: message
+                for field, message in required_buyer_fields.items()
+                if not str(attrs.get(field, '')).strip()
+            }
+            if missing_fields:
+                raise serializers.ValidationError(missing_fields)
 
         if listing and listing.status != MarketListing.Status.ACTIVE:
             raise serializers.ValidationError({'listing': 'This listing is not available for orders.'})

@@ -1,12 +1,19 @@
 from collections import defaultdict
 from datetime import timedelta
 from decimal import Decimal
+import json
 
 from django.db import transaction
 from django.utils import timezone
 
+from core.services.gemini import GeminiError, generate_json_response, is_gemini_configured
+
 from .models import MarketPriceSnapshot
 
+
+SOURCE_GEMINI = 'Gemini AI'
+SOURCE_SAMPLE = 'Generated sample'
+SOURCE_EXISTING = 'Existing snapshots'
 
 BANGLADESH_DIVISIONS = [
     'Barishal',
@@ -49,10 +56,58 @@ DEMAND_LEVELS = [
 
 
 def ensure_generated_market_data():
-    if MarketPriceSnapshot.objects.exists():
-        return False
+    return ensure_market_data()['generated']
+
+
+def ensure_market_data(force_refresh=False):
+    if not force_refresh and MarketPriceSnapshot.objects.exists():
+        return {
+            'generated': False,
+            'source': get_latest_source() or SOURCE_EXISTING,
+        }
 
     today = timezone.localdate()
+    records = []
+    source = SOURCE_SAMPLE
+
+    if is_gemini_configured():
+        try:
+            records = build_gemini_market_records(today)
+            source = SOURCE_GEMINI
+        except (
+            GeminiError,
+            json.JSONDecodeError,
+            KeyError,
+            TypeError,
+            ValueError,
+            ArithmeticError,
+        ):
+            records = []
+
+    if not records:
+        records = build_sample_market_records(today, source=SOURCE_SAMPLE)
+        source = SOURCE_SAMPLE
+
+    with transaction.atomic():
+        for record in records:
+            MarketPriceSnapshot.objects.update_or_create(
+                fish_name=record.fish_name,
+                division=record.division,
+                recorded_date=record.recorded_date,
+                defaults={
+                    'price_per_kg': record.price_per_kg,
+                    'demand_level': record.demand_level,
+                    'source': record.source,
+                },
+            )
+
+    return {
+        'generated': True,
+        'source': source,
+    }
+
+
+def build_sample_market_records(today, source=SOURCE_SAMPLE):
     records = []
 
     for day_offset in range(7, -1, -1):
@@ -70,16 +125,132 @@ def ensure_generated_market_data():
                     recorded_date=date,
                     price_per_kg=Decimal(str(round(price, 2))),
                     demand_level=demand,
+                    source=source,
                 ))
 
-    with transaction.atomic():
-        MarketPriceSnapshot.objects.bulk_create(records, ignore_conflicts=True)
-
-    return True
+    return records
 
 
-def build_market_dashboard():
-    generated = ensure_generated_market_data()
+def build_gemini_market_records(today):
+    response = generate_json_response(
+        build_market_generation_prompt(today),
+        temperature=0.35,
+        max_output_tokens=12000,
+    )
+    rows = response.get('records')
+    if not isinstance(rows, list):
+        raise ValueError('Gemini market price response must contain a records list.')
+
+    date_values = [today - timedelta(days=day_offset) for day_offset in range(7, -1, -1)]
+    expected_pairs = {
+        (fish['name'], division)
+        for fish in BANGLADESHI_FISH
+        for division in BANGLADESH_DIVISIONS
+    }
+    normalized_by_pair = {}
+
+    for row in rows:
+        fish_name = normalize_choice(row.get('fish_name'), [fish['name'] for fish in BANGLADESHI_FISH])
+        division = normalize_choice(row.get('division'), BANGLADESH_DIVISIONS)
+        prices = row.get('prices')
+        demand_levels = row.get('demand_levels')
+
+        if fish_name is None or division is None:
+            continue
+        if not isinstance(prices, list) or len(prices) != len(date_values):
+            continue
+        if not isinstance(demand_levels, list) or len(demand_levels) != len(date_values):
+            continue
+
+        normalized_prices = [normalize_price(price) for price in prices]
+        normalized_demands = [normalize_demand_level(level) for level in demand_levels]
+        normalized_by_pair[(fish_name, division)] = (normalized_prices, normalized_demands)
+
+    missing_pairs = expected_pairs - set(normalized_by_pair)
+    if missing_pairs:
+        raise ValueError('Gemini market price response is missing fish/division combinations.')
+
+    records = []
+    for fish_name, division in sorted(expected_pairs):
+        prices, demand_levels = normalized_by_pair[(fish_name, division)]
+        for index, date in enumerate(date_values):
+            records.append(MarketPriceSnapshot(
+                fish_name=fish_name,
+                division=division,
+                recorded_date=date,
+                price_per_kg=prices[index],
+                demand_level=demand_levels[index],
+                source=SOURCE_GEMINI,
+            ))
+
+    return records
+
+
+def build_market_generation_prompt(today):
+    fish_names = [fish['name'] for fish in BANGLADESHI_FISH]
+    date_values = [
+        (today - timedelta(days=day_offset)).isoformat()
+        for day_offset in range(7, -1, -1)
+    ]
+    prompt_data = {
+        'country': 'Bangladesh',
+        'currency': 'BDT',
+        'unit': 'kg',
+        'dates': date_values,
+        'fish': fish_names,
+        'divisions': BANGLADESH_DIVISIONS,
+        'base_price_reference': BANGLADESHI_FISH,
+    }
+
+    return (
+        'You generate plausible aquaculture market price estimates for a fisheries dashboard. '
+        'Use English only. Do not claim these are live, verified, or official prices. '
+        'Generate realistic BDT per kg prices for each fish and Bangladesh division, using regional demand, '
+        'urban transport cost, seasonal supply, and short weekly movement. '
+        'Return JSON only with one top-level key named records. '
+        'records must contain exactly one item for every fish/division pair. '
+        'Each item must contain fish_name, division, prices, and demand_levels. '
+        'prices must be 8 positive numbers ordered by the supplied dates. '
+        'demand_levels must be 8 strings, each Low, Medium, or High, ordered by the supplied dates. '
+        f'Data: {json.dumps(prompt_data)}'
+    )
+
+
+def normalize_choice(value, choices):
+    text = str(value or '').strip().lower()
+    lookup = {choice.lower(): choice for choice in choices}
+    return lookup.get(text)
+
+
+def normalize_price(value):
+    price = Decimal(str(value)).quantize(Decimal('0.01'))
+    if price < Decimal('80.00') or price > Decimal('5000.00'):
+        raise ValueError('Gemini returned an unrealistic market price.')
+    return price
+
+
+def normalize_demand_level(value):
+    text = str(value or '').strip().lower()
+    if text == 'low':
+        return MarketPriceSnapshot.DemandLevel.LOW
+    if text == 'medium':
+        return MarketPriceSnapshot.DemandLevel.MEDIUM
+    if text == 'high':
+        return MarketPriceSnapshot.DemandLevel.HIGH
+    raise ValueError('Gemini returned an invalid demand level.')
+
+
+def get_latest_source():
+    return (
+        MarketPriceSnapshot.objects
+        .order_by('-recorded_date', '-updated_at')
+        .values_list('source', flat=True)
+        .first()
+    )
+
+
+def build_market_dashboard(force_refresh=False):
+    generation = ensure_market_data(force_refresh=force_refresh)
     today = timezone.localdate()
     start_date = today - timedelta(days=6)
 
@@ -139,11 +310,13 @@ def build_market_dashboard():
             'change_percent': round_decimal(change_percent),
             'direction': direction,
             'demand_level': today_record.demand_level,
+            'source': today_record.source,
             'last_7_days': [
                 {
                     'date': record.recorded_date.isoformat(),
                     'price': round_decimal(record.price_per_kg),
                     'demand_level': record.demand_level,
+                    'source': record.source,
                 }
                 for record in history
             ],
@@ -166,7 +339,9 @@ def build_market_dashboard():
     average_price = sum(today_prices, Decimal('0.00')) / len(today_prices) if today_prices else Decimal('0.00')
 
     return {
-        'generated': generated,
+        'generated': generation['generated'],
+        'price_source': generation['source'],
+        'ai_enabled': generation['source'] == SOURCE_GEMINI,
         'currency': 'BDT',
         'unit': 'kg',
         'as_of_date': today.isoformat(),

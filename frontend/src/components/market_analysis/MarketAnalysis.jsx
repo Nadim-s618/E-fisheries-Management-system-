@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { getMarketAnalysisDashboard } from '../../lib/api';
 import './MarketAnalysis.css';
@@ -124,36 +124,42 @@ export default function MarketAnalysis() {
   const [fishFilter, setFishFilter] = useState('All');
   const [selectedKey, setSelectedKey] = useState('');
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    let active = true;
-
-    async function loadDashboard() {
+  const loadDashboard = useCallback(async (refresh = false) => {
+    if (refresh) {
+      setRefreshing(true);
+    } else {
       setLoading(true);
-      setError('');
-
-      try {
-        const data = await getMarketAnalysisDashboard();
-        if (!active) return;
-        setDashboard(data);
-        const firstRecord = data?.records?.[0];
-        if (firstRecord) {
-          setSelectedKey(`${firstRecord.fish_name}-${firstRecord.division}`);
-        }
-      } catch (err) {
-        if (active) setError(err.message);
-      } finally {
-        if (active) setLoading(false);
-      }
     }
+    setError('');
 
-    loadDashboard();
+    try {
+      const data = await getMarketAnalysisDashboard({ refresh });
+      setDashboard(data);
+      setSelectedKey(currentKey => {
+        const hasCurrentRecord = data?.records?.some(record => (
+          `${record.fish_name}-${record.division}` === currentKey
+        ));
+        if (hasCurrentRecord) return currentKey;
 
-    return () => {
-      active = false;
-    };
+        const firstRecord = data?.records?.[0];
+        return firstRecord ? `${firstRecord.fish_name}-${firstRecord.division}` : '';
+      });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, []);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      loadDashboard();
+    });
+  }, [loadDashboard]);
 
   const records = useMemo(() => {
     const allRecords = dashboard?.records || [];
@@ -178,8 +184,18 @@ export default function MarketAnalysis() {
           <span className="ma-kicker">Market Analysis</span>
           <h1 id="market-analysis-title">Bangladesh Fish Price Dashboard</h1>
           {dashboard?.as_of_date && <p>Updated for {formatDate(dashboard.as_of_date, { dateStyle: 'medium' })}</p>}
+          {dashboard?.price_source && <p className="ma-source">Source: {dashboard.price_source}</p>}
         </div>
         <div className="ma-controls">
+          <button
+            type="button"
+            className="ma-refresh-button"
+            onClick={() => loadDashboard(true)}
+            disabled={loading || refreshing}
+          >
+            <span aria-hidden="true">{'\u21bb'}</span>
+            {refreshing ? 'Refreshing...' : 'Refresh prices'}
+          </button>
           <label className="ma-field">
             <span>Division</span>
             <select value={divisionFilter} onChange={event => setDivisionFilter(event.target.value)}>

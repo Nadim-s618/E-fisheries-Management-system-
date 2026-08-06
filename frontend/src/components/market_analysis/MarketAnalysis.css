@@ -69,9 +69,39 @@
   font-weight: 700;
 }
 
+.ma-source {
+  font-size: 13px;
+}
+
 .ma-field {
   display: grid;
   gap: 4px;
+}
+
+.ma-refresh-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  border: 1px solid var(--ma-green);
+  border-radius: 8px;
+  background: var(--ma-green);
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 900;
+  padding: 9px 13px;
+}
+
+.ma-refresh-button span {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.ma-refresh-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
 }
 
 .ma-field select {
