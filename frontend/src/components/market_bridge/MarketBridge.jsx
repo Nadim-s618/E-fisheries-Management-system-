@@ -13,7 +13,6 @@ import {
   getPondStocks,
   getPonds,
   rejectMarketOrder,
-  updateMarketProfile,
 } from '../../lib/api';
 import { useAuth } from '../../context/useAuth';
 import './MarketBridge.css';
@@ -36,6 +35,15 @@ const EMPTY_FORM = {
   available_from: '',
   description: '',
   photo: null,
+};
+
+const EMPTY_ORDER_DRAFT = {
+  listing: null,
+  quantity_kg: '',
+  buyer_full_name: '',
+  buyer_contact_number: '',
+  buyer_address: '',
+  buyer_note: '',
 };
 
 function money(value) {
@@ -119,6 +127,11 @@ function OrderRow({ order, currentUserId, onAction }) {
         <span>Buyer: {order.buyer_name}</span>
         <span>Seller: {order.seller_name}</span>
       </div>
+      <div className="mb-order-contact">
+        <span>{order.buyer_full_name}</span>
+        <span>{order.buyer_contact_number}</span>
+        <small>{order.buyer_address}</small>
+      </div>
       <div className="mb-order-actions">
         {isSeller && order.status === 'pending' && (
           <>
@@ -148,7 +161,7 @@ export default function MarketBridge() {
   const [stocks, setStocks] = useState([]);
   const [selectedPondId, setSelectedPondId] = useState('');
   const [form, setForm] = useState(EMPTY_FORM);
-  const [orderDraft, setOrderDraft] = useState({ listing: null, quantity_kg: '', buyer_note: '' });
+  const [orderDraft, setOrderDraft] = useState(EMPTY_ORDER_DRAFT);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -199,7 +212,9 @@ export default function MarketBridge() {
 
   useEffect(() => {
     if (!selectedPondId) {
-      setStocks([]);
+      queueMicrotask(() => {
+        setStocks([]);
+      });
       return;
     }
 
@@ -243,18 +258,6 @@ export default function MarketBridge() {
           title: `${stock.species} from ${stock.batch_name}`,
         }));
       }
-    }
-  }
-
-  async function updateRole(event) {
-    const nextRole = event.target.value;
-    setProfile(current => ({ ...current, role: nextRole }));
-    try {
-      const data = await updateMarketProfile({ role: nextRole });
-      setProfile(data);
-      setMessage('Market role updated.');
-    } catch (err) {
-      setError(err.message);
     }
   }
 
@@ -316,9 +319,12 @@ export default function MarketBridge() {
       await createMarketOrder({
         listing: orderDraft.listing.id,
         quantity_kg: orderDraft.quantity_kg,
+        buyer_full_name: orderDraft.buyer_full_name,
+        buyer_address: orderDraft.buyer_address,
+        buyer_contact_number: orderDraft.buyer_contact_number,
         buyer_note: orderDraft.buyer_note,
       });
-      setOrderDraft({ listing: null, quantity_kg: '', buyer_note: '' });
+      setOrderDraft(EMPTY_ORDER_DRAFT);
       await reloadMarket();
       setActiveTab('orders');
       setMessage('Order request sent.');
@@ -358,14 +364,6 @@ export default function MarketBridge() {
           <span>Market Bridge</span>
           <h1 id="market-bridge-title">Fish Store</h1>
         </div>
-        <label className="mb-role">
-          <span>Role</span>
-          <select value={profile?.role || 'both'} onChange={updateRole}>
-            <option value="both">Buyer and seller</option>
-            <option value="buyer">Buyer</option>
-            <option value="seller">Seller</option>
-          </select>
-        </label>
       </div>
 
       <div className="mb-summary">
@@ -408,7 +406,7 @@ export default function MarketBridge() {
               key={listing.id}
               listing={listing}
               currentUserId={user?.id}
-              onOrder={listing => setOrderDraft({ listing, quantity_kg: '', buyer_note: '' })}
+              onOrder={listing => setOrderDraft({ ...EMPTY_ORDER_DRAFT, listing })}
             />
           )) : (
             <StatePanel>No active fish listings found.</StatePanel>
@@ -571,6 +569,33 @@ export default function MarketBridge() {
                 required
               />
             </label>
+            <div className="mb-grid-two">
+              <label className="mb-field">
+                <span>Full name</span>
+                <input
+                  value={orderDraft.buyer_full_name}
+                  onChange={event => setOrderDraft(current => ({ ...current, buyer_full_name: event.target.value }))}
+                  required
+                />
+              </label>
+              <label className="mb-field">
+                <span>Contact number</span>
+                <input
+                  value={orderDraft.buyer_contact_number}
+                  onChange={event => setOrderDraft(current => ({ ...current, buyer_contact_number: event.target.value }))}
+                  required
+                />
+              </label>
+            </div>
+            <label className="mb-field">
+              <span>Full address</span>
+              <textarea
+                rows="3"
+                value={orderDraft.buyer_address}
+                onChange={event => setOrderDraft(current => ({ ...current, buyer_address: event.target.value }))}
+                required
+              />
+            </label>
             <label className="mb-field">
               <span>Note</span>
               <textarea
@@ -580,7 +605,7 @@ export default function MarketBridge() {
               />
             </label>
             <div className="mb-modal-actions">
-              <button type="button" className="mb-btn mb-btn-secondary" onClick={() => setOrderDraft({ listing: null, quantity_kg: '', buyer_note: '' })}>
+              <button type="button" className="mb-btn mb-btn-secondary" onClick={() => setOrderDraft(EMPTY_ORDER_DRAFT)}>
                 Close
               </button>
               <button type="submit" className="mb-btn mb-btn-primary" disabled={saving || !canBuy}>
