@@ -5,7 +5,7 @@ from rest_framework import serializers
 from stocks.models import FishStock
 
 from .models import MarketListing, MarketOrder, MarketProfile
-from .services import get_or_create_market_profile, recommend_price
+from .services import recommend_price
 
 
 class MarketProfileSerializer(serializers.ModelSerializer):
@@ -144,9 +144,6 @@ class MarketListingSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         request = self.context['request']
-        profile = get_or_create_market_profile(request.user)
-        if not profile.can_sell and not request.user.is_staff:
-            raise serializers.ValidationError({'detail': 'Your market role is not approved for selling.'})
 
         if not validated_data.get('available_quantity_kg'):
             validated_data['available_quantity_kg'] = validated_data['quantity_kg']
@@ -274,10 +271,6 @@ class MarketOrderSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         request = self.context['request']
-        profile = get_or_create_market_profile(request.user)
-        if not profile.can_buy and not request.user.is_staff:
-            raise serializers.ValidationError({'detail': 'Your market role is not approved for buying.'})
-
         listing = validated_data['listing']
         quantity = validated_data['quantity_kg']
         unit_price = listing.unit_price

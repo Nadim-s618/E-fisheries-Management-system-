@@ -31,11 +31,11 @@ class MarketProfile(models.Model):
 
     @property
     def can_buy(self):
-        return self.is_approved and self.role in {self.Role.BUYER, self.Role.BOTH}
+        return True
 
     @property
     def can_sell(self):
-        return self.is_approved and self.role in {self.Role.SELLER, self.Role.BOTH}
+        return True
 
     def __str__(self):
         return f'{self.user} market profile'
