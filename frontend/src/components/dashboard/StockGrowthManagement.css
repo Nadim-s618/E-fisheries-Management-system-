@@ -12,8 +12,14 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
+  width: 100%;
+  min-width: 0;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   color: var(--dp-ink);
+}
+
+.dp-management * {
+  box-sizing: border-box;
 }
 
 /* ---------- Header ---------- */
@@ -301,6 +307,7 @@
 
 .dp-stock-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -473,6 +480,7 @@
 /* ---------- Growth table ---------- */
 
 .dp-table-wrap {
+  width: 100%;
   overflow-x: auto;
 }
 
@@ -589,5 +597,59 @@
   .dp-management-header {
     flex-direction: column;
     align-items: flex-start;
+    padding: 20px;
+    border-radius: 16px;
+  }
+
+  .dp-management-header h1 {
+    font-size: 21px;
+  }
+
+  .dp-management-header .dp-btn-primary,
+  .dp-form-actions .dp-btn-primary,
+  .dp-form-actions .dp-btn-secondary {
+    width: 100%;
+  }
+
+  .dp-form-actions,
+  .dp-growth-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .dp-stock-card {
+    padding: 18px;
+    border-radius: 16px;
+  }
+
+  .dp-stock-actions,
+  .dp-stock-actions .dp-table-action {
+    width: 100%;
+  }
+
+  .dp-stock-actions .dp-table-action {
+    justify-content: center;
+  }
+
+  .dp-data-table th,
+  .dp-data-table td {
+    padding: 9px 10px;
+  }
+}
+
+@media (max-width: 420px) {
+  .dp-form-grid,
+  .dp-metric-row,
+  .dp-growth-insights {
+    grid-template-columns: 1fr;
+  }
+
+  .dp-pond-form,
+  .dp-growth-form {
+    padding: 16px;
+  }
+
+  .dp-pond-option {
+    min-width: 140px;
   }
 }
