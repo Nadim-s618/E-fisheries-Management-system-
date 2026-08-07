@@ -16,6 +16,7 @@
   flex-direction: column;
   gap: 20px;
   width: 100%;
+  min-width: 0;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   color: var(--mb-ink);
 }
@@ -722,6 +723,8 @@
   .mb-header {
     flex-direction: column;
     align-items: flex-start;
+    padding: 22px;
+    border-radius: 16px;
   }
 }
 
@@ -750,12 +753,38 @@
   .mb-card-bottom {
     margin-left: 0;
     justify-content: space-between;
+    flex-wrap: wrap;
   }
 }
 
 @media (max-width: 560px) {
   .mb-header h1 {
     font-size: 26px;
+  }
+
+  .mb-summary,
+  .mb-grid-two,
+  .mb-grid-three {
+    grid-template-columns: 1fr;
+  }
+
+  .mb-panel,
+  .mb-summary {
+    padding: 16px;
+    border-radius: 14px;
+  }
+
+  .mb-form-actions,
+  .mb-modal-actions,
+  .mb-order-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .mb-form-actions .mb-btn,
+  .mb-modal-actions .mb-btn,
+  .mb-order-actions .mb-btn {
+    width: 100%;
   }
 
   .mb-order-row {

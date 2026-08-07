@@ -105,3 +105,9 @@
     font-size: 13px;
   }
 }
+
+@media (max-width: 380px) {
+  .dp-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}

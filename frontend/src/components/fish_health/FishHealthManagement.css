@@ -15,6 +15,7 @@
   --fhm-soft-amber: #fff4dc;
   --fhm-soft-green: #e7f7ee;
   width: 100%;
+  min-width: 0;
   max-width: 1180px;
   margin: 0 auto;
   padding: 24px;
@@ -443,7 +444,9 @@
 }
 
 .fhm-table-wrap {
+  width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid var(--fhm-line);
   border-radius: 8px;
 }
@@ -558,5 +561,28 @@
 
   .fhm-alert {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .fhm-root {
+    padding: 12px;
+  }
+
+  .fhm-header h1 {
+    font-size: 24px;
+  }
+
+  .fhm-overview,
+  .fhm-checks,
+  .fhm-library-grid,
+  .fhm-context-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .fhm-panel,
+  .fhm-form,
+  .fhm-metric {
+    padding: 14px;
   }
 }

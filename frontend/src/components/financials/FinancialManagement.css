@@ -12,6 +12,7 @@
   --fm-blue: #2f6fbd;
 
   width: 100%;
+  min-width: 0;
   max-width: 1180px;
   margin: 0 auto;
   padding: 24px;
@@ -268,6 +269,7 @@
 .fm-table-wrap {
   width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid var(--fm-line);
   border-radius: 8px;
   background: #fff;
@@ -474,5 +476,48 @@
   .fm-budget-card dl,
   .fm-performance-card dl {
     grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .fm-root {
+    padding: 12px;
+  }
+
+  .fm-header,
+  .fm-header-actions,
+  .fm-actions,
+  .fm-panel-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .fm-header h1 {
+    font-size: 24px;
+  }
+
+  .fm-header-actions .fm-btn,
+  .fm-actions .fm-btn,
+  .fm-pond-picker,
+  .fm-pond-picker select {
+    width: 100%;
+  }
+
+  .fm-panel,
+  .fm-form,
+  .fm-state,
+  .fm-metric,
+  .fm-budget-card,
+  .fm-performance-card {
+    padding: 14px;
+  }
+
+  .fm-budget-card dl,
+  .fm-performance-card dl {
+    grid-template-columns: 1fr;
+  }
+
+  .fm-trend {
+    overflow-x: auto;
   }
 }

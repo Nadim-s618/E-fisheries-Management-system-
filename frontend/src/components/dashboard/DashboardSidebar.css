@@ -15,6 +15,7 @@
   --dp-ease: cubic-bezier(0.4, 0, 0.2, 1);
 
   width: 260px;
+  flex: 0 0 260px;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -136,6 +137,7 @@
   flex-direction: column;
   gap: 2px;
   flex: 1;
+  min-width: 0;
 }
 
 .dp-sidebar-item {
@@ -316,15 +318,19 @@
 @media (max-width: 900px) {
   .dp-sidebar {
     width: 100%;
+    flex: 0 0 auto;
     min-height: auto;
     flex-direction: row;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
-    gap: 4px;
+    gap: 8px;
     padding: 12px 16px;
     border-right: none;
     border-bottom: 1px solid var(--dp-sidebar-border);
     animation: dp-sidebar-in-top 0.45s var(--dp-ease) both;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
   }
 
   @keyframes dp-sidebar-in-top {
@@ -334,10 +340,13 @@
 
   .dp-sidebar-brand {
     padding: 4px 8px 4px 0;
+    flex: 0 0 auto;
   }
 
   .dp-btn-add-pond {
     margin-bottom: 0;
+    flex: 0 0 auto;
+    min-height: 40px;
   }
 
   .dp-sidebar-heading {
@@ -346,14 +355,20 @@
 
   .dp-sidebar-nav {
     flex-direction: row;
-    flex-wrap: wrap;
-    flex: 1;
-    gap: 2px;
+    flex-wrap: nowrap;
+    flex: 1 1 auto;
+    gap: 4px;
     overflow-x: auto;
+    padding: 2px 0;
+    scrollbar-width: thin;
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
   }
 
   .dp-sidebar-item {
     animation: none; /* staggered slide-in reads oddly once items flow horizontally */
+    flex: 0 0 auto;
+    min-height: 40px;
   }
 
   .dp-sidebar-item:hover {
@@ -364,6 +379,8 @@
     margin-top: 0;
     border-top: none;
     padding-top: 10px;
+    flex: 0 0 auto;
+    min-height: 40px;
   }
 }
 
@@ -383,5 +400,44 @@
 
   .dp-btn-add-pond span {
     display: none; /* icon-only button when space is tight */
+  }
+}
+
+@media (max-width: 640px) {
+  .dp-sidebar-brand {
+    display: none;
+  }
+
+  .dp-sidebar {
+    gap: 6px;
+  }
+
+  .dp-sidebar-item {
+    gap: 8px;
+    padding: 9px 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .dp-btn-add-pond .dp-sidebar-icon {
+    display: inline-flex;
+  }
+
+  .dp-add-pond-label {
+    display: none;
+  }
+
+  .dp-btn-add-pond,
+  .dp-btn-signout {
+    padding-inline: 12px;
+  }
+
+  .dp-btn-signout {
+    gap: 0;
+    font-size: 0;
+  }
+
+  .dp-btn-signout .dp-sidebar-icon {
+    font-size: initial;
   }
 }

@@ -23,7 +23,7 @@ export function DashboardSidebar({
             <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
         </span>
-        Add New Pond
+        <span className="dp-add-pond-label">Add New Pond</span>
       </button>
 
       <p className="dp-sidebar-heading">Menu</p>

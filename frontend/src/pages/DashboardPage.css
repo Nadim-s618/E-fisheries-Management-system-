@@ -8,7 +8,7 @@
 .dp-root {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  min-height: 100vh;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   background-color: #f9fbfa;
   background-image:
@@ -20,6 +20,10 @@
   background-attachment: fixed;
   color: #ffffff;
 }
+.dp-root,
+.dp-root * {
+  box-sizing: border-box;
+}
 .dp-root h1,
 .dp-root h2,
 .dp-root h3,
@@ -29,10 +33,13 @@
 .dp-body {
   display: flex;
   flex: 1;
+  min-height: 0;
+  width: 100%;
   overflow: hidden;
 }
 .dp-main {
   flex: 1;
+  min-width: 0;
   overflow-y: auto;
   padding: 32px;
   display: flex;
@@ -72,11 +79,13 @@
 @media (max-width: 900px) {
   .dp-body {
     flex-direction: column;
-    overflow: auto;
+    min-height: auto;
+    overflow: visible;
   }
   .dp-main {
+    width: 100%;
     overflow: visible;
-    padding: 20px;
+    padding: 20px clamp(16px, 4vw, 24px);
   }
 }
 /* Respect users who prefer reduced motion */

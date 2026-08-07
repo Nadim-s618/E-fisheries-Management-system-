@@ -13,6 +13,7 @@
   --wm-danger-bg: #fde7e3;
 
   width: 100%;
+  min-width: 0;
   max-width: 1190px;
   margin: 0 auto;
   padding: 24px;
@@ -133,6 +134,7 @@
 .wm-grid {
   display: grid;
   gap: 16px;
+  min-width: 0;
 }
 
 .wm-hero,
@@ -445,6 +447,20 @@
   .wm-field,
   .wm-field select {
     width: 100%;
+  }
+
+  .wm-root {
+    padding: 12px;
+  }
+
+  .wm-hero,
+  .wm-panel {
+    padding: 16px;
+  }
+
+  .wm-metrics,
+  .wm-forecast-strip {
+    grid-template-columns: 1fr;
   }
 
   .wm-do-grid {
