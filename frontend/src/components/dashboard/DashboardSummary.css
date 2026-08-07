@@ -9,7 +9,6 @@
   gap: 8px;
   animation: dp-fade-in 0.4s ease both;
 }
-
 .dp-alert-header {
   display: flex;
   align-items: center;
@@ -17,17 +16,14 @@
   font-weight: 600;
   color: #991b1b;
 }
-
 .dp-alert-row { font-size: 14px; color: #7f1d1d; }
 .dp-alert-pond { font-weight: 600; }
-
 /* Stats Grid */
 .dp-stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
 }
-
 .dp-stat-card {
   background: #ffffff;
   padding: 20px;
@@ -37,18 +33,75 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   animation: dp-card-in 0.4s ease both;
 }
-
 .dp-stats-grid .dp-stat-card:nth-child(1) { animation-delay: 0.02s; }
 .dp-stats-grid .dp-stat-card:nth-child(2) { animation-delay: 0.08s; }
 .dp-stats-grid .dp-stat-card:nth-child(3) { animation-delay: 0.14s; }
 .dp-stats-grid .dp-stat-card:nth-child(4) { animation-delay: 0.2s; }
-
 .dp-stat-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
   border-color: #BBD6C6;
 }
-
 .dp-stat-label { font-size: 13px; color: #6C8B7D; margin: 0 0 8px 0; }
 .dp-stat-value { font-size: 24px; font-weight: 700; color: #16332B; margin: 0 0 4px 0; }
 .dp-stat-sub { font-size: 12px; color: #96B6A6; margin: 0; }
+
+/* ══════════════════════════════════════════════════════════
+   RESPONSIVE — everything above is untouched.
+   The stats grid already reflows itself via auto-fit/minmax;
+   these breakpoints just tighten spacing and type scale so
+   cards don't feel oversized on narrow screens.
+   ══════════════════════════════════════════════════════════ */
+
+/* ─── Small tablet / large phone (≤768px) ─── */
+@media (max-width: 768px) {
+  .dp-stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+  }
+
+  .dp-stat-card {
+    padding: 16px;
+  }
+
+  .dp-stat-value {
+    font-size: 21px;
+  }
+
+  .dp-alert-banner {
+    padding: 14px;
+  }
+}
+
+/* ─── Phone (≤480px) ─── */
+@media (max-width: 480px) {
+  .dp-stats-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .dp-stat-card {
+    padding: 14px;
+  }
+
+  .dp-stat-label {
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+
+  .dp-stat-value {
+    font-size: 19px;
+  }
+
+  .dp-stat-sub {
+    font-size: 11px;
+  }
+
+  .dp-alert-header {
+    font-size: 14px;
+  }
+
+  .dp-alert-row {
+    font-size: 13px;
+  }
+}

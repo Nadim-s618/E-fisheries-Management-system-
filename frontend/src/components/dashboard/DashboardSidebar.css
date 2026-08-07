@@ -304,3 +304,84 @@
     transform: none !important;
   }
 }
+
+/* ══════════════════════════════════════════════════════════
+   RESPONSIVE — everything above is untouched.
+   DashboardPage.css already switches .dp-body to a column layout
+   at ≤900px, so the sidebar below that width needs to behave like
+   a top nav strip rather than a full-height 260px rail.
+   ══════════════════════════════════════════════════════════ */
+
+/* ─── Tablet / stacked layout (≤900px) ─── */
+@media (max-width: 900px) {
+  .dp-sidebar {
+    width: 100%;
+    min-height: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 16px;
+    border-right: none;
+    border-bottom: 1px solid var(--dp-sidebar-border);
+    animation: dp-sidebar-in-top 0.45s var(--dp-ease) both;
+  }
+
+  @keyframes dp-sidebar-in-top {
+    from { opacity: 0; transform: translateY(-12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .dp-sidebar-brand {
+    padding: 4px 8px 4px 0;
+  }
+
+  .dp-btn-add-pond {
+    margin-bottom: 0;
+  }
+
+  .dp-sidebar-heading {
+    display: none; /* section labels take up space in a horizontal strip */
+  }
+
+  .dp-sidebar-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    flex: 1;
+    gap: 2px;
+    overflow-x: auto;
+  }
+
+  .dp-sidebar-item {
+    animation: none; /* staggered slide-in reads oddly once items flow horizontally */
+  }
+
+  .dp-sidebar-item:hover {
+    transform: none; /* translateX doesn't read well in a horizontal strip */
+  }
+
+  .dp-btn-signout {
+    margin-top: 0;
+    border-top: none;
+    padding-top: 10px;
+  }
+}
+
+/* ─── Phone (≤480px) ─── */
+@media (max-width: 480px) {
+  .dp-sidebar {
+    padding: 10px 12px;
+  }
+
+  .dp-sidebar-brand-sub {
+    display: none; /* keep the top strip compact on small phones */
+  }
+
+  .dp-sidebar-label {
+    max-width: 90px;
+  }
+
+  .dp-btn-add-pond span {
+    display: none; /* icon-only button when space is tight */
+  }
+}
