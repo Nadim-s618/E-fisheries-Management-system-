@@ -582,3 +582,196 @@
 .footer-legal a:hover {
   color: #2dd4bf;
 }
+
+/* ══════════════════════════════════════════════════════════
+   RESPONSIVE — everything above is untouched.
+   Breakpoints only override/adjust layout for smaller screens.
+   ══════════════════════════════════════════════════════════ */
+
+/* ─── Tablet (≤1024px) ─── */
+@media (max-width: 1024px) {
+  .section-inner {
+    max-width: 90%;
+  }
+
+  .footer-grid {
+    grid-template-columns: 2fr 1fr 1fr;
+  }
+}
+
+/* ─── Small tablet / large phone (≤768px) ─── */
+@media (max-width: 768px) {
+  .navbar-inner {
+    padding: 0 1rem;
+    gap: 1rem;
+  }
+
+  .nav-links {
+    display: none; /* collapses nav links; hook up a mobile menu toggle in markup if needed */
+  }
+
+  .nav-auth {
+    gap: 0.5rem;
+  }
+
+  .nav-user {
+    max-width: 100px;
+    font-size: 0.8rem;
+  }
+
+  .btn-nav {
+    padding: 0.4rem 0.85rem;
+    font-size: 0.8rem;
+  }
+
+  .hero-inner {
+    padding: 4.5rem 1.25rem 2.5rem;
+  }
+
+  .hero-sub {
+    font-size: 0.95rem;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn-primary,
+  .btn-ghost {
+    text-align: center;
+  }
+
+  .stats-strip {
+    margin-left: 1rem;
+    margin-right: 1rem;
+    border-radius: 12px;
+  }
+
+  .stat-item {
+    flex: 1 1 50%;
+    min-width: 120px;
+    padding: 1.25rem 1rem;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .stat-item:nth-last-child(-n+2) {
+    border-bottom: none;
+  }
+
+  .stat-value {
+    font-size: 1.3rem;
+  }
+
+  .page-features,
+  .page-closing {
+    padding: 3.5rem 1.25rem;
+  }
+
+  .section-sub {
+    margin-bottom: 2rem;
+  }
+
+  .feature-card {
+    padding: 1rem 1.25rem;
+    gap: 1rem;
+  }
+
+  .feature-card p {
+    line-height: 1.6; /* note: original value (8) was likely unintentional; keeping layout usable on small screens */
+  }
+
+  .role-pills {
+    margin-bottom: 2rem;
+  }
+
+  .btn-large {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .footer {
+    padding: 2.5rem 1.25rem 1.5rem;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 1.75rem;
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .footer-legal {
+    gap: 1rem;
+  }
+}
+
+/* ─── Phone (≤480px) ─── */
+@media (max-width: 480px) {
+  .navbar-inner {
+    height: 56px;
+  }
+
+  .logo-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .logo-name {
+    font-size: 0.95rem;
+  }
+
+  .logo-sub {
+    font-size: 0.65rem;
+  }
+
+  .nav-user {
+    display: none; /* not enough room next to auth buttons on very small screens */
+  }
+
+  .hero-inner {
+    padding: 4rem 1rem 2rem;
+  }
+
+  .hero-eyebrow {
+    font-size: 0.7rem;
+  }
+
+  .stats-strip {
+    margin-left: 0.75rem;
+    margin-right: 0.75rem;
+  }
+
+  .stat-item {
+    flex: 1 1 100%;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .stat-item:last-child {
+    border-bottom: none;
+  }
+
+  .feature-card {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .feature-media {
+    margin-bottom: 0.5rem;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .footer-legal {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}

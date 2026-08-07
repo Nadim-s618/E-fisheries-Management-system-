@@ -504,3 +504,103 @@
   background: var(--wqm-good-tint);
   color: var(--wqm-good);
 }
+
+/* ══════════════════════════════════════════════════════════
+   RESPONSIVE — everything above is untouched.
+   Most grids already reflow via auto-fit/minmax; these
+   breakpoints tighten spacing/type and fix a few pieces
+   (header, tabs, actions, table) that don't auto-adjust.
+   ══════════════════════════════════════════════════════════ */
+
+/* ─── Small tablet / large phone (≤768px) ─── */
+@media (max-width: 768px) {
+  .wqm-root {
+    gap: 16px;
+  }
+
+  .wqm-header {
+    padding: 20px;
+    gap: 16px;
+  }
+
+  .wqm-header h1 {
+    font-size: 22px;
+  }
+
+  .wqm-pond-picker select {
+    width: 100%;
+  }
+
+  .wqm-overview,
+  .wqm-card-grid,
+  .wqm-form-grid,
+  .wqm-comparison-grid,
+  .wqm-advice-grid {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+  }
+
+  .wqm-overview strong,
+  .wqm-card > strong {
+    font-size: 20px;
+  }
+
+  .wqm-panel,
+  .wqm-form,
+  .wqm-filter-row,
+  .wqm-table-wrap {
+    padding: 16px;
+    border-radius: 14px;
+  }
+
+  .wqm-panel-header h2 {
+    font-size: 15px;
+  }
+}
+
+/* ─── Phone (≤480px) ─── */
+@media (max-width: 480px) {
+  .wqm-header {
+    padding: 18px;
+  }
+
+  .wqm-header h1 {
+    font-size: 19px;
+  }
+
+  .wqm-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+
+  .wqm-tabs button {
+    flex-shrink: 0;
+    padding: 8px 12px;
+  }
+
+  .wqm-overview,
+  .wqm-card-grid,
+  .wqm-form-grid,
+  .wqm-comparison-grid,
+  .wqm-advice-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .wqm-actions {
+    justify-content: stretch;
+  }
+
+  .wqm-actions .wqm-btn {
+    flex: 1;
+  }
+
+  .wqm-filter-row {
+    padding: 14px;
+  }
+
+  .wqm-table th,
+  .wqm-table td {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+}
