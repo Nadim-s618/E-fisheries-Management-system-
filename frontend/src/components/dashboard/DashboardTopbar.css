@@ -1011,3 +1011,46 @@
     right: -8px;
   }
 }
+
+@media (max-width: 900px) {
+  .dp-navbar,
+  .dp-nav-links,
+  .dp-nav-right {
+    min-width: 0;
+  }
+
+  .dp-nav-links {
+    scrollbar-width: thin;
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .dp-nav-link {
+    flex: 0 0 auto;
+  }
+}
+
+@media (max-width: 560px) {
+  .dp-navbar {
+    align-items: center;
+  }
+
+  .dp-nav-links {
+    order: 4;
+  }
+
+  .dp-nav-right {
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 380px) {
+  .dp-icon-btn {
+    width: 34px;
+    height: 34px;
+  }
+
+  .dp-profile-display {
+    padding-right: 6px;
+  }
+}

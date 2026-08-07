@@ -2,7 +2,13 @@
   display: flex;
   flex-direction: column;
   gap: 18px;
+  width: 100%;
+  min-width: 0;
   color: #18322f;
+}
+
+.aim-root * {
+  box-sizing: border-box;
 }
 
 .aim-header,
@@ -58,6 +64,7 @@
 .aim-stack {
   display: grid;
   gap: 14px;
+  width: 100%;
   max-width: 860px;
 }
 
@@ -107,5 +114,23 @@
 
   .aim-field {
     min-width: 0;
+  }
+
+  .aim-field select {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .aim-header,
+  .aim-summary,
+  .aim-panel,
+  .aim-state {
+    padding: 14px;
+  }
+
+  .aim-header h1,
+  .aim-summary h2 {
+    font-size: 1.45rem;
   }
 }
