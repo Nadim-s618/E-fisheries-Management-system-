@@ -14,8 +14,14 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
+  width: 100%;
+  min-width: 0;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   color: var(--wqm-ink);
+}
+
+.wqm-root * {
+  box-sizing: border-box;
 }
 
 /* ---------- Header ---------- */
@@ -275,6 +281,7 @@
 
 .wqm-chart-meta {
   display: flex;
+  flex-wrap: wrap;
   gap: 16px;
   margin-top: 10px;
   font-size: 12px;
@@ -369,7 +376,9 @@
 /* ---------- Table ---------- */
 
 .wqm-table-wrap {
+  width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   background: #ffffff;
   border: 1px solid var(--wqm-border);
   border-radius: 18px;
@@ -602,5 +611,22 @@
   .wqm-table td {
     padding: 8px 10px;
     font-size: 12px;
+  }
+}
+
+@media (max-width: 380px) {
+  .wqm-overview,
+  .wqm-card-grid,
+  .wqm-form-grid,
+  .wqm-comparison-grid,
+  .wqm-advice-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .wqm-panel,
+  .wqm-form,
+  .wqm-filter-row,
+  .wqm-table-wrap {
+    padding: 14px;
   }
 }
