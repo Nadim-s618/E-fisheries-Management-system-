@@ -9,8 +9,8 @@ from rest_framework.test import APITestCase
 from growth.models import GrowthRecord
 from ponds.models import Pond
 
-from .models import FishStock
-from .serializers import FishStockSerializer
+from ..models import FishStock
+from ..serializers import FishStockSerializer
 
 
 User = get_user_model()
@@ -244,9 +244,7 @@ class StockApiTests(APITestCase):
         self.authenticate()
 
         first_response = self.client.post(
-            f'/api/ponds/{self.pond.id}/stocks/',
-            self.stock_payload,
-            format='json',
+            f'/api/ponds/{self.pond.id}/stocks/', self.stock_payload, format='json'
         )
         second_response = self.client.post(
             f'/api/ponds/{self.pond.id}/stocks/',
@@ -271,9 +269,7 @@ class StockApiTests(APITestCase):
         )
 
         response = self.client.post(
-            f'/api/ponds/{second_pond.id}/stocks/',
-            self.stock_payload,
-            format='json',
+            f'/api/ponds/{second_pond.id}/stocks/', self.stock_payload, format='json'
         )
 
         self.assertEqual(response.status_code, 201)
@@ -284,9 +280,7 @@ class StockApiTests(APITestCase):
         self.create_stock()
 
         response = self.client.post(
-            f'/api/ponds/{self.pond.id}/stocks/',
-            self.stock_payload,
-            format='json',
+            f'/api/ponds/{self.pond.id}/stocks/', self.stock_payload, format='json'
         )
 
         self.assertEqual(response.status_code, 400)
@@ -325,9 +319,7 @@ class StockApiTests(APITestCase):
 
         self.assertEqual(response.status_code, 200)
         response_ids = {stock['id'] for stock in response.data}
-        pond_stock_ids = set(
-            FishStock.objects.filter(pond=self.pond).values_list('id', flat=True)
-        )
+        pond_stock_ids = set(FishStock.objects.filter(pond=self.pond).values_list('id', flat=True))
         self.assertIn(own_stock.id, response_ids)
         self.assertEqual(response_ids, pond_stock_ids)
 
@@ -380,9 +372,7 @@ class StockApiTests(APITestCase):
         stock = self.create_stock()
 
         response = self.client.patch(
-            f'/api/stocks/{stock.id}/',
-            {'current_quantity': 875},
-            format='json',
+            f'/api/stocks/{stock.id}/', {'current_quantity': 875}, format='json'
         )
 
         self.assertEqual(response.status_code, 200)
@@ -412,9 +402,7 @@ class StockApiTests(APITestCase):
         stock = self.create_stock()
 
         response = self.client.patch(
-            f'/api/stocks/{stock.id}/',
-            {'current_quantity': -1},
-            format='json',
+            f'/api/stocks/{stock.id}/', {'current_quantity': -1}, format='json'
         )
 
         self.assertEqual(response.status_code, 400)
@@ -428,9 +416,7 @@ class StockApiTests(APITestCase):
         stock = self.create_stock(batch_name='Catla A', species='Catla')
 
         response = self.client.patch(
-            f'/api/stocks/{stock.id}/',
-            {'batch_name': first_stock.batch_name},
-            format='json',
+            f'/api/stocks/{stock.id}/', {'batch_name': first_stock.batch_name}, format='json'
         )
 
         self.assertEqual(response.status_code, 400)
