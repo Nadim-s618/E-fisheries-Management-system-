@@ -1,5 +1,6 @@
 from datetime import date
 from decimal import Decimal
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.utils import timezone
@@ -11,6 +12,7 @@ from ponds.models import Pond
 from stocks.models import FishStock
 from water_quality.models import WaterQualityReading
 from weather.models import WeatherReport
+from feeding.services.recommendations import enhance_payload_with_ai, get_stock_summary
 
 from .models import FeedingRecommendation, FeedingSession
 
@@ -108,7 +110,7 @@ class FeedingApiTests(APITestCase):
         self.assertEqual(recommendation['pond_name'], 'Pond A')
         self.assertEqual(recommendation['feed_type'], 'Floating Feed 32%')
         self.assertEqual(recommendation['recommended_feed_kg'], '12.60')
-        self.assertEqual(recommendation['estimated_cost'], '56.70')
+        self.assertEqual(recommendation['estimated_cost'], '1701.00')
         self.assertEqual(recommendation['meals'], 2)
         self.assertEqual(
             recommendation['reasons'],
@@ -116,6 +118,78 @@ class FeedingApiTests(APITestCase):
         )
         self.assertEqual(len(recommendation['schedule']), 2)
         self.assertTrue(Notification.objects.filter(user=self.user, parameter='Feeding recommendation').exists())
+
+    def test_stock_summary_uses_current_growth_weight_when_available(self):
+        summary = get_stock_summary(self.pond)
+
+        self.assertEqual(summary['weight_source'], 'current_growth')
+        self.assertEqual(summary['biomass_kg'], Decimal('700.00'))
+
+    def test_stock_summary_falls_back_to_stock_weight_without_growth(self):
+        GrowthRecord.objects.filter(stock=self.stock).delete()
+
+        summary = get_stock_summary(self.pond)
+
+        self.assertEqual(summary['weight_source'], 'stock_initial_weight')
+        self.assertEqual(summary['biomass_kg'], Decimal('100.00'))
+
+    def test_dashboard_uses_stock_weight_when_no_growth_is_added(self):
+        GrowthRecord.objects.filter(stock=self.stock).delete()
+        self.authenticate()
+
+        response = self.client.get(f'/api/feeding/dashboard/?pond={self.pond.id}')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['recommendation']['recommended_feed_kg'], '3.00')
+        self.assertEqual(
+            response.data['recommendation']['input_summary']['stock']['weight_source'],
+            'stock_initial_weight',
+        )
+
+    @patch('feeding.services.recommendations.is_gemini_configured', return_value=True)
+    @patch('feeding.services.recommendations.generate_json_response')
+    def test_gemini_generates_price_in_taka(self, generate_json_response, configured):
+        generate_json_response.return_value = {
+            'price_per_kg': '150',
+            'recommendations': [],
+            'cautions': [],
+        }
+        payload = {
+            'recommendation_date': date(2026, 8, 1),
+            'recommended_feed_kg': Decimal('10.00'),
+            'price_per_kg': Decimal('135.00'),
+            'estimated_cost': Decimal('1350.00'),
+            'schedule': [{'time': '08:00'}, {'time': '16:30'}],
+            'reasons': ['Healthy fish'],
+            'input_summary': {},
+        }
+
+        result = enhance_payload_with_ai(self.pond, payload)
+
+        self.assertEqual(result['price_per_kg'], Decimal('150.00'))
+        self.assertEqual(result['estimated_cost'], Decimal('1500.00'))
+        self.assertEqual(result['input_summary']['ai_advice']['price_per_kg'], '150')
+        configured.assert_called_once_with()
+
+    @patch('feeding.services.recommendations.is_gemini_configured', return_value=True)
+    @patch('feeding.services.recommendations.generate_json_response')
+    def test_invalid_gemini_price_keeps_safe_default(self, generate_json_response, configured):
+        generate_json_response.return_value = {'price_per_kg': 'not-a-price'}
+        payload = {
+            'recommendation_date': date(2026, 8, 1),
+            'recommended_feed_kg': Decimal('10.00'),
+            'price_per_kg': Decimal('135.00'),
+            'estimated_cost': Decimal('1350.00'),
+            'schedule': [{'time': '08:00'}, {'time': '16:30'}],
+            'reasons': ['Healthy fish'],
+            'input_summary': {},
+        }
+
+        result = enhance_payload_with_ai(self.pond, payload)
+
+        self.assertEqual(result['price_per_kg'], Decimal('135.00'))
+        self.assertEqual(result['estimated_cost'], Decimal('1350.00'))
+        configured.assert_called_once_with()
 
     def test_accept_recommendation_creates_trackable_sessions(self):
         self.authenticate()

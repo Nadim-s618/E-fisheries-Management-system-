@@ -1,32 +1,33 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import { getAiAdvisor, getPonds } from '../../lib/api';
 import './DashboardTopbar.css';
 
 export function DashboardTopbar({
   onPondsClick,
-  onSearchClick,
+  onHomeClick,
   onNotificationClick,
   onNotificationRead,
   onNotificationsRead,
-  onProfileClick,
+  onLogout,
   user,
   notifications = [],
   notificationsLoading = false,
 }) {
-  const [isSearchActive, setIsSearchActive] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isTipsOpen, setIsTipsOpen] = useState(false);
+  const [ponds, setPonds] = useState([]);
+  const [selectedPondId, setSelectedPondId] = useState('');
+  const [tips, setTips] = useState(null);
+  const [tipsLoading, setTipsLoading] = useState(false);
+  const [tipsError, setTipsError] = useState('');
   const navigate = useNavigate();
 
   const notificationCount = notifications.length;
   const initial = (user?.first_name || 'P').charAt(0).toUpperCase();
   const userName = user?.first_name || 'Profile';
   const userEmail = user?.email || 'user@fisheries.local';
-
-  const handleSearch = () => {
-    setIsSearchActive(!isSearchActive);
-    onSearchClick?.();
-  };
 
   const handleNotification = () => {
     setIsProfileOpen(false);
@@ -36,7 +37,49 @@ export function DashboardTopbar({
 
   const handleProfileClick = () => {
     setIsNotificationOpen(false);
+    setIsTipsOpen(false);
     setIsProfileOpen(!isProfileOpen);
+  };
+
+  const loadTips = async (pondId) => {
+    if (!pondId) return;
+
+    setSelectedPondId(String(pondId));
+    setTipsLoading(true);
+    setTipsError('');
+
+    try {
+      const data = await getAiAdvisor(pondId);
+      setTips(data);
+    } catch (error) {
+      setTips(null);
+      setTipsError(error.message || 'Unable to load tips.');
+    } finally {
+      setTipsLoading(false);
+    }
+  };
+
+  const handleTipsClick = async () => {
+    setIsNotificationOpen(false);
+    setIsProfileOpen(false);
+    const opening = !isTipsOpen;
+    setIsTipsOpen(opening);
+
+    if (opening && ponds.length === 0) {
+      setTipsLoading(true);
+      setTipsError('');
+      try {
+        const data = await getPonds();
+        const availablePonds = data || [];
+        setPonds(availablePonds);
+        if (availablePonds[0]?.id) {
+          await loadTips(availablePonds[0].id);
+        }
+      } catch (error) {
+        setTipsError(error.message || 'Unable to load ponds.');
+        setTipsLoading(false);
+      }
+    }
   };
 
   const handleNavigation = (path) => {
@@ -44,9 +87,9 @@ export function DashboardTopbar({
     navigate(path);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setIsProfileOpen(false);
-    onProfileClick?.('logout');
+    await onLogout?.();
   };
 
   const handleNotificationItemClick = async (notification) => {
@@ -62,7 +105,7 @@ export function DashboardTopbar({
   return (
     <header className="dp-navbar">
       {/* Logo Section */}
-      <Link to="/" className="dp-logo">
+      <Link to="/dashboard" className="dp-logo" onClick={onHomeClick}>
         <div className="dp-logo-mark">
           <img src="/logo.png" alt="e-Fisheries logo" />
         </div>
@@ -74,9 +117,9 @@ export function DashboardTopbar({
 
       {/* Center Navigation Links */}
       <nav className="dp-nav-links">
-        <Link to="/" className="dp-nav-link">
+        <button type="button" className="dp-nav-link" onClick={onHomeClick}>
           Home
-        </Link>
+        </button>
         <button
           type="button"
           className="dp-nav-link"
@@ -85,35 +128,75 @@ export function DashboardTopbar({
         >
           Ponds
         </button>
-        <a href="#tips" className="dp-nav-link">
-          Tips
-        </a>
+        <div className="dp-tips-wrapper">
+          <button
+            type="button"
+            className="dp-nav-link"
+            onClick={handleTipsClick}
+            aria-expanded={isTipsOpen}
+            aria-controls="dashboard-tips-menu"
+          >
+            Tips
+          </button>
+
+          {isTipsOpen && (
+            <div id="dashboard-tips-menu" className="dp-tips-menu" role="dialog" aria-label="Pond tips">
+              <div className="dp-tips-header">
+                <div>
+                  <span className="dp-tips-kicker">AI Advisor</span>
+                  <strong>Pond tips</strong>
+                </div>
+                <label className="dp-tips-field">
+                  <span>Pond</span>
+                  <select
+                    value={selectedPondId}
+                    onChange={event => loadTips(event.target.value)}
+                    disabled={!ponds.length || tipsLoading}
+                  >
+                    {!ponds.length ? (
+                      <option value="">No ponds</option>
+                    ) : ponds.map(pond => (
+                      <option key={pond.id} value={pond.id}>{pond.name}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              {tipsLoading ? (
+                <div className="dp-tips-state">Loading tips...</div>
+              ) : tipsError ? (
+                <div className="dp-tips-state dp-tips-error">{tipsError}</div>
+              ) : !ponds.length ? (
+                <div className="dp-tips-state">Add a pond before generating tips.</div>
+              ) : tips ? (
+                <div className="dp-tips-content">
+                  <div className="dp-tips-summary">
+                    <span>{tips.ai_enabled ? 'Gemini AI' : 'Fallback Advisor'}</span>
+                    <strong>{tips.priority || 'Normal'}</strong>
+                    <p>{tips.summary}</p>
+                  </div>
+                  {[
+                    ['Recommendations', tips.recommendations, 'recommendations'],
+                    ['Risks to watch', tips.risks, 'risks'],
+                    ['Next actions', tips.next_actions, 'actions'],
+                    ['Daily farm tips', tips.daily_tips, 'daily'],
+                  ].map(([title, items, type]) => items?.length > 0 && (
+                    <section className={`dp-tips-section dp-tips-${type}`} key={title}>
+                      <strong>{title}</strong>
+                      <ul>{items.map(item => <li key={item}>{item}</li>)}</ul>
+                    </section>
+                  ))}
+                </div>
+              ) : (
+                <div className="dp-tips-state">Select a pond to generate tips.</div>
+              )}
+            </div>
+          )}
+        </div>
       </nav>
 
       {/* Right Section */}
       <div className="dp-nav-right">
-        {/* Search Button */}
-        <button
-          className="dp-icon-btn dp-search-btn"
-          onClick={handleSearch}
-          aria-label="Search"
-          title="Search"
-        >
-          <svg
-            width="17"
-            height="17"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <circle cx="11" cy="11" r="8" />
-            <path d="M21 21l-4.35-4.35" />
-          </svg>
-        </button>
-
         {/* Notification Button */}
         <div className="dp-notif-wrapper">
           <button
@@ -144,17 +227,18 @@ export function DashboardTopbar({
           </button>
 
           {isNotificationOpen && (
-            <div className="dp-notif-menu" role="menu" aria-label="Notifications">
+            <div className="dp-notif-menu" role="dialog" aria-label="Notifications">
               <div className="dp-notif-menu-header">
                 <div>
                   <span>Notifications</span>
                   <small>{notificationCount} unread</small>
                 </div>
-                {notificationCount > 0 && (
-                  <button type="button" className="dp-notif-clear" onClick={handleMarkAllRead}>
-                    Mark all read
-                  </button>
-                )}
+                <div className="dp-notif-header-actions">
+                  {notificationCount > 0 && (
+                    <button type="button" className="dp-notif-clear" onClick={handleMarkAllRead}>Mark all read</button>
+                  )}
+                  <button type="button" className="dp-notif-close" onClick={() => setIsNotificationOpen(false)} aria-label="Close notifications">×</button>
+                </div>
               </div>
               <div className="dp-notif-list">
                 {notificationsLoading ? (
@@ -200,7 +284,7 @@ export function DashboardTopbar({
             title={userName}
           >
             <span className="dp-profile-avatar" aria-hidden="true">
-              {initial}
+              {user?.profile_picture_url ? <img src={user.profile_picture_url} alt="" /> : initial}
             </span>
             <span className="dp-profile-name">{userName}</span>
             <svg
@@ -222,7 +306,9 @@ export function DashboardTopbar({
           {isProfileOpen && (
             <div className="dp-profile-menu" role="menu">
               <div className="dp-profile-menu-header">
-                <div className="dp-profile-avatar-lg">{initial}</div>
+                <div className="dp-profile-avatar-lg">
+                  {user?.profile_picture_url ? <img src={user.profile_picture_url} alt="" /> : initial}
+                </div>
                 <div className="dp-profile-info">
                   <p className="dp-profile-name-full">{userName}</p>
                   <p className="dp-profile-email">{userEmail}</p>
@@ -230,29 +316,6 @@ export function DashboardTopbar({
               </div>
 
               <div className="dp-profile-menu-divider" />
-
-              <a
-                href="#settings"
-                className="dp-profile-menu-item"
-                role="menuitem"
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleNavigation('/settings');
-                }}
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <circle cx="12" cy="12" r="3" />
-                  <path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m2.12 2.12l4.24 4.24M1 12h6m6 0h6m-1.78 7.78l-4.24-4.24m-2.12-2.12l-4.24-4.24" />
-                </svg>
-                Settings
-              </a>
 
               <a
                 href="#profile"
@@ -275,28 +338,6 @@ export function DashboardTopbar({
                   <circle cx="12" cy="7" r="4" />
                 </svg>
                 My Profile
-              </a>
-
-              <a
-                href="#help"
-                className="dp-profile-menu-item"
-                role="menuitem"
-                onClick={(e) => {
-                  e.preventDefault();
-                }}
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M12 16v-4M12 8h.01" />
-                </svg>
-                Help & Support
               </a>
 
               <div className="dp-profile-menu-divider" />

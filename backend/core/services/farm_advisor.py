@@ -30,6 +30,7 @@ def get_farm_advice(pond):
         'recommendations': normalize_list(ai_advice.get('recommendations')) or fallback['recommendations'],
         'risks': normalize_list(ai_advice.get('risks')) or fallback['risks'],
         'next_actions': normalize_list(ai_advice.get('next_actions')) or fallback['next_actions'],
+        'daily_tips': normalize_list(ai_advice.get('daily_tips')) or fallback['daily_tips'],
         'context': context,
     }
 
@@ -185,6 +186,12 @@ def build_fallback_advice(context):
             'Review water quality, feeding, and fish health records daily.',
             'Refresh missing records before relying on long-term planning decisions.',
         ],
+        'daily_tips': [
+            'Check fish activity and appetite before feeding.',
+            'Confirm aeration and water movement before nightfall.',
+            'Remove unusual or dead fish promptly and record the observation.',
+            'Keep water, feeding, health, and stock records updated after each check.',
+        ],
         'context': context,
     }
 
@@ -193,8 +200,8 @@ def build_farm_prompt(context):
     return (
         'You are an aquaculture farm advisor. Use English only. '
         'Use only the provided pond, stock, water quality, weather, feeding, and health context. '
-        'Return JSON with keys: summary, priority, recommendations, risks, next_actions. '
-        'recommendations, risks, and next_actions must be arrays of concise practical strings. '
+        'Return JSON with keys: summary, priority, recommendations, risks, next_actions, daily_tips. '
+        'recommendations, risks, next_actions, and daily_tips must be arrays of concise practical strings. '
         'Do not claim certainty when data is missing. '
         f'Data: {json.dumps(context)}'
     )

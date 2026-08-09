@@ -3,7 +3,9 @@ import { AuthProvider } from './context/AuthProvider';
 import { useAuth } from './context/useAuth';
 import AuthPage from './pages/AuthPage';
 import DashboardPage from './pages/DashboardPage';
+import FishStorePage from './pages/FishStorePage';
 import HomePage from './pages/HomePage';
+import ProfilePage from './pages/ProfilePage';
 // import WaterQualityPage from './pages/WaterQualityPage';
 
 
@@ -27,6 +29,7 @@ export default function App() {
       <AuthProvider>
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/fish-store" element={<FishStorePage />} />
           <Route path="/login" element={<AuthPage mode="login" />} />
           <Route path="/signup" element={<AuthPage mode="signup" />} />
           <Route path="/register" element={<AuthPage mode="signup" />} />
@@ -35,6 +38,14 @@ export default function App() {
             element={(
               <ProtectedRoute>
                 <DashboardPage />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path="/profile"
+            element={(
+              <ProtectedRoute>
+                <ProfilePage />
               </ProtectedRoute>
             )}
           />

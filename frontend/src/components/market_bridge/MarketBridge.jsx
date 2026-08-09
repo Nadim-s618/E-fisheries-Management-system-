@@ -2,10 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 
 import {
   acceptMarketOrder,
-  cancelMarketOrder,
   completeMarketOrder,
   createMarketListing,
-  createMarketOrder,
+  deliverMarketOrder,
   getMarketListings,
   getMarketOrders,
   getMarketPriceRecommendation,
@@ -13,12 +12,12 @@ import {
   getPondStocks,
   getPonds,
   rejectMarketOrder,
+  shipMarketOrder,
 } from '../../lib/api';
 import { useAuth } from '../../context/useAuth';
 import './MarketBridge.css';
 
 const TABS = [
-  { id: 'store', label: 'Store' },
   { id: 'sell', label: 'Sell' },
   { id: 'orders', label: 'Orders' },
 ];
@@ -27,6 +26,8 @@ const EMPTY_FORM = {
   source_type: 'manual',
   fish_stock: '',
   species: '',
+  average_height_cm: '',
+  average_weight_g: '',
   title: '',
   quantity_kg: '',
   unit_price: '',
@@ -35,15 +36,6 @@ const EMPTY_FORM = {
   available_from: '',
   description: '',
   photo: null,
-};
-
-const EMPTY_ORDER_DRAFT = {
-  listing: null,
-  quantity_kg: '',
-  buyer_full_name: '',
-  buyer_contact_number: '',
-  buyer_address: '',
-  buyer_note: '',
 };
 
 function money(value) {
@@ -56,60 +48,16 @@ function number(value, suffix = '') {
   return `${Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 })}${suffix}`;
 }
 
-function dateLabel(value) {
-  if (!value) return 'Ready now';
-  return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
-    .format(new Date(`${value}T00:00:00`));
-}
-
 function StatusBadge({ status }) {
-  return <span className={`mb-badge mb-badge-${status}`}>{status.replace('_', ' ')}</span>;
+  return <span className={`mb-badge mb-badge-${status}`}>{status.replaceAll('_', ' ')}</span>;
 }
 
 function StatePanel({ type = 'empty', children }) {
   return <div className={`mb-state mb-state-${type}`}>{children}</div>;
 }
 
-function ListingCard({ listing, currentUserId, onOrder }) {
-  const isOwnListing = listing.seller === currentUserId;
-
-  return (
-    <article className="mb-listing-card">
-      <div className="mb-listing-photo">
-        {listing.photo_url ? (
-          <img src={listing.photo_url} alt={listing.title} />
-        ) : (
-          <span>{listing.species?.slice(0, 2).toUpperCase() || 'FS'}</span>
-        )}
-      </div>
-      <div className="mb-listing-body">
-        <div className="mb-card-top">
-          <div>
-            <span>{listing.species}</span>
-            <h3>{listing.title}</h3>
-          </div>
-          <StatusBadge status={listing.status} />
-        </div>
-        <p>{listing.location}</p>
-        <div className="mb-listing-metrics">
-          <strong>{money(listing.unit_price)} / kg</strong>
-          <span>{number(listing.available_quantity_kg, ' kg')} available</span>
-          <span>{dateLabel(listing.available_from)}</span>
-        </div>
-        <div className="mb-card-bottom">
-          <small>Seller: {listing.seller_name}</small>
-          <button type="button" className="mb-btn mb-btn-primary" disabled={isOwnListing} onClick={() => onOrder(listing)}>
-            Request order
-          </button>
-        </div>
-      </div>
-    </article>
-  );
-}
-
 function OrderRow({ order, currentUserId, onAction }) {
   const isSeller = order.seller === currentUserId;
-  const isBuyer = order.buyer === currentUserId;
 
   return (
     <article className="mb-order-row">
@@ -140,10 +88,13 @@ function OrderRow({ order, currentUserId, onAction }) {
           </>
         )}
         {isSeller && order.status === 'accepted' && (
-          <button type="button" className="mb-btn mb-btn-primary" onClick={() => onAction('complete', order.id)}>Complete</button>
+          <button type="button" className="mb-btn mb-btn-primary" onClick={() => onAction('ship', order.id)}>Mark shipped</button>
         )}
-        {isBuyer && order.status === 'pending' && (
-          <button type="button" className="mb-btn mb-btn-secondary" onClick={() => onAction('cancel', order.id)}>Cancel</button>
+        {isSeller && order.status === 'shipped' && (
+          <button type="button" className="mb-btn mb-btn-primary" onClick={() => onAction('deliver', order.id)}>Send for delivery</button>
+        )}
+        {isSeller && order.status === 'out_for_delivery' && (
+          <button type="button" className="mb-btn mb-btn-primary" onClick={() => onAction('complete', order.id)}>Complete</button>
         )}
       </div>
     </article>
@@ -152,7 +103,8 @@ function OrderRow({ order, currentUserId, onAction }) {
 
 export default function MarketBridge() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('store');
+  const currentUserId = user?.id;
+  const [activeTab, setActiveTab] = useState('sell');
   const [profile, setProfile] = useState(null);
   const [listings, setListings] = useState([]);
   const [myListings, setMyListings] = useState([]);
@@ -161,14 +113,12 @@ export default function MarketBridge() {
   const [stocks, setStocks] = useState([]);
   const [selectedPondId, setSelectedPondId] = useState('');
   const [form, setForm] = useState(EMPTY_FORM);
-  const [orderDraft, setOrderDraft] = useState(EMPTY_ORDER_DRAFT);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
   const canSell = profile?.can_sell ?? user?.market_profile?.can_sell ?? true;
-  const canBuy = profile?.can_buy ?? user?.market_profile?.can_buy ?? true;
 
   const summary = useMemo(() => {
     const activeListings = listings.filter(item => item.status === 'active');
@@ -195,7 +145,7 @@ export default function MarketBridge() {
         setProfile(profileData);
         setListings(listingData || []);
         setMyListings(myListingData || []);
-        setOrders(orderData || []);
+        setOrders((orderData || []).filter(order => String(order.seller) === String(currentUserId)));
         setPonds(pondData || []);
       } catch (err) {
         if (mounted) setError(err.message);
@@ -208,7 +158,7 @@ export default function MarketBridge() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [currentUserId]);
 
   useEffect(() => {
     if (!selectedPondId) {
@@ -240,7 +190,7 @@ export default function MarketBridge() {
     ]);
     setListings(listingData || []);
     setMyListings(myListingData || []);
-    setOrders(orderData || []);
+    setOrders((orderData || []).filter(order => String(order.seller) === String(currentUserId)));
   }
 
   function updateForm(event) {
@@ -308,39 +258,13 @@ export default function MarketBridge() {
     }
   }
 
-  async function submitOrder(event) {
-    event.preventDefault();
-    if (!orderDraft.listing) return;
-
-    setSaving(true);
-    setError('');
-    setMessage('');
-    try {
-      await createMarketOrder({
-        listing: orderDraft.listing.id,
-        quantity_kg: orderDraft.quantity_kg,
-        buyer_full_name: orderDraft.buyer_full_name,
-        buyer_address: orderDraft.buyer_address,
-        buyer_contact_number: orderDraft.buyer_contact_number,
-        buyer_note: orderDraft.buyer_note,
-      });
-      setOrderDraft(EMPTY_ORDER_DRAFT);
-      await reloadMarket();
-      setActiveTab('orders');
-      setMessage('Order request sent.');
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
-    }
-  }
-
   async function handleOrderAction(action, id) {
     const actions = {
       accept: acceptMarketOrder,
       reject: rejectMarketOrder,
+      ship: shipMarketOrder,
+      deliver: deliverMarketOrder,
       complete: completeMarketOrder,
-      cancel: cancelMarketOrder,
     };
 
     setSaving(true);
@@ -399,19 +323,6 @@ export default function MarketBridge() {
 
       {loading ? (
         <StatePanel>Loading market bridge...</StatePanel>
-      ) : activeTab === 'store' ? (
-        <div className="mb-grid">
-          {listings.length ? listings.map(listing => (
-            <ListingCard
-              key={listing.id}
-              listing={listing}
-              currentUserId={user?.id}
-              onOrder={listing => setOrderDraft({ ...EMPTY_ORDER_DRAFT, listing })}
-            />
-          )) : (
-            <StatePanel>No active fish listings found.</StatePanel>
-          )}
-        </div>
       ) : activeTab === 'sell' ? (
         <div className="mb-sell-layout">
           <form className="mb-panel mb-form" onSubmit={submitListing}>
@@ -440,6 +351,17 @@ export default function MarketBridge() {
                   </select>
                 </label>
               )}
+            </div>
+
+            <div className="mb-grid-two">
+              <label className="mb-field">
+                <span>Average height (cm)</span>
+                <input type="number" min="0.01" step="0.01" name="average_height_cm" value={form.average_height_cm} onChange={updateForm} required />
+              </label>
+              <label className="mb-field">
+                <span>Average weight (g)</span>
+                <input type="number" min="0.01" step="0.01" name="average_weight_g" value={form.average_weight_g} onChange={updateForm} required />
+              </label>
             </div>
 
             {form.source_type === 'inventory' && (
@@ -540,7 +462,7 @@ export default function MarketBridge() {
             <OrderRow
               key={order.id}
               order={order}
-              currentUserId={user?.id}
+              currentUserId={currentUserId}
               onAction={handleOrderAction}
             />
           )) : (
@@ -549,72 +471,6 @@ export default function MarketBridge() {
         </div>
       )}
 
-      {orderDraft.listing && (
-        <div className="mb-modal-backdrop" role="presentation">
-          <form className="mb-modal" onSubmit={submitOrder}>
-            <div className="mb-panel-title">
-              <span>Order Request</span>
-              <h2>{orderDraft.listing.title}</h2>
-            </div>
-            {!canBuy && <StatePanel type="error">Your account is not approved for buyer actions.</StatePanel>}
-            <label className="mb-field">
-              <span>Quantity kg</span>
-              <input
-                type="number"
-                min="0.01"
-                max={orderDraft.listing.available_quantity_kg}
-                step="0.01"
-                value={orderDraft.quantity_kg}
-                onChange={event => setOrderDraft(current => ({ ...current, quantity_kg: event.target.value }))}
-                required
-              />
-            </label>
-            <div className="mb-grid-two">
-              <label className="mb-field">
-                <span>Full name</span>
-                <input
-                  value={orderDraft.buyer_full_name}
-                  onChange={event => setOrderDraft(current => ({ ...current, buyer_full_name: event.target.value }))}
-                  required
-                />
-              </label>
-              <label className="mb-field">
-                <span>Contact number</span>
-                <input
-                  value={orderDraft.buyer_contact_number}
-                  onChange={event => setOrderDraft(current => ({ ...current, buyer_contact_number: event.target.value }))}
-                  required
-                />
-              </label>
-            </div>
-            <label className="mb-field">
-              <span>Full address</span>
-              <textarea
-                rows="3"
-                value={orderDraft.buyer_address}
-                onChange={event => setOrderDraft(current => ({ ...current, buyer_address: event.target.value }))}
-                required
-              />
-            </label>
-            <label className="mb-field">
-              <span>Note</span>
-              <textarea
-                rows="3"
-                value={orderDraft.buyer_note}
-                onChange={event => setOrderDraft(current => ({ ...current, buyer_note: event.target.value }))}
-              />
-            </label>
-            <div className="mb-modal-actions">
-              <button type="button" className="mb-btn mb-btn-secondary" onClick={() => setOrderDraft(EMPTY_ORDER_DRAFT)}>
-                Close
-              </button>
-              <button type="submit" className="mb-btn mb-btn-primary" disabled={saving || !canBuy}>
-                Send request
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
     </section>
   );
 }

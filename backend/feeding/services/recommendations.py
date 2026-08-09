@@ -16,7 +16,11 @@ from feeding.services.notifications import create_feeding_notification
 
 
 DEFAULT_FEED_TYPE = 'Floating Feed 32%'
-DEFAULT_PRICE_PER_KG = Decimal('4.50')
+# Local Bangladesh feed-price baseline. The previous 4.50 value was a
+# Malaysian Ringgit-style amount and was incorrect when displayed as TK.
+DEFAULT_PRICE_PER_KG = Decimal('135.00')
+MIN_AI_PRICE_PER_KG = Decimal('50.00')
+MAX_AI_PRICE_PER_KG = Decimal('300.00')
 DEFAULT_MEAL_TIMES = ['08:00', '16:30']
 REDUCED_MEAL_TIMES = ['09:00']
 
@@ -36,6 +40,52 @@ def get_or_create_draft_recommendation(pond, recommendation_date=None, force_new
         ).order_by('-created_at').first()
 
         if existing:
+            if existing.price_per_kg == Decimal('4.50'):
+                existing.price_per_kg = DEFAULT_PRICE_PER_KG
+                existing.estimated_cost = kg(
+                    existing.recommended_feed_kg * DEFAULT_PRICE_PER_KG,
+                )
+                existing.save(update_fields=['price_per_kg', 'estimated_cost', 'updated_at'])
+
+            ai_advice = (existing.input_summary or {}).get('ai_advice', {})
+            if ai_advice.get('source') != 'gemini':
+                enhanced_payload = enhance_payload_with_ai(pond, {
+                    'recommendation_date': existing.recommendation_date,
+                    'recommended_feed_kg': existing.recommended_feed_kg,
+                    'feed_type': existing.feed_type,
+                    'price_per_kg': existing.price_per_kg,
+                    'estimated_cost': existing.estimated_cost,
+                    'meals': existing.meals,
+                    'schedule': existing.schedule or build_schedule(
+                        existing.recommendation_date,
+                        existing.recommended_feed_kg,
+                        DEFAULT_MEAL_TIMES,
+                    ),
+                    'reasons': existing.reasons or [],
+                    'input_summary': existing.input_summary or {},
+                })
+                for field in (
+                    'recommended_feed_kg',
+                    'feed_type',
+                    'price_per_kg',
+                    'estimated_cost',
+                    'meals',
+                    'schedule',
+                    'reasons',
+                    'input_summary',
+                ):
+                    setattr(existing, field, enhanced_payload[field])
+                existing.save(update_fields=[
+                    'recommended_feed_kg',
+                    'feed_type',
+                    'price_per_kg',
+                    'estimated_cost',
+                    'meals',
+                    'schedule',
+                    'reasons',
+                    'input_summary',
+                    'updated_at',
+                ])
             return existing, False
 
     payload = build_recommendation_payload(pond, recommendation_date)
@@ -113,6 +163,13 @@ def enhance_payload_with_ai(pond, payload):
         upper_bound = base_feed * Decimal('1.25')
         payload['recommended_feed_kg'] = kg(min(max(feed_kg, lower_bound), upper_bound))
 
+    ai_price = parse_decimal(ai_advice.get('price_per_kg'))
+    if ai_price is not None and ai_price > 0:
+        payload['price_per_kg'] = kg(min(
+            max(ai_price, MIN_AI_PRICE_PER_KG),
+            MAX_AI_PRICE_PER_KG,
+        ))
+
     if ai_advice.get('feed_type'):
         payload['feed_type'] = str(ai_advice['feed_type'])[:120]
 
@@ -144,6 +201,7 @@ def get_feeding_ai_advice(pond, payload):
     fallback = {
         'source': 'fallback',
         'ai_enabled': False,
+        'price_per_kg': str(DEFAULT_PRICE_PER_KG),
         'explanation': 'Formula-based feeding recommendation generated from stock, water quality, weather, and recent feeding history.',
         'recommendations': [
             'Follow the calculated ration and observe appetite during each meal.',
@@ -165,6 +223,7 @@ def get_feeding_ai_advice(pond, payload):
         'ai_enabled': True,
         'explanation': str(ai_advice.get('explanation') or fallback['explanation']).strip(),
         'recommended_feed_kg': ai_advice.get('recommended_feed_kg'),
+        'price_per_kg': ai_advice.get('price_per_kg'),
         'feed_type': str(ai_advice.get('feed_type') or '').strip(),
         'meals': ai_advice.get('meals'),
         'meal_times': normalize_meal_times(ai_advice.get('meal_times')),
@@ -191,8 +250,9 @@ def build_feeding_prompt(pond, payload):
         'You are an aquaculture feeding advisor. Use English only. '
         'Use the formula recommendation as the safe baseline and adjust only when the provided stock, '
         'water quality, weather, or feeding history strongly supports it. '
-        'Return JSON with keys: explanation, recommended_feed_kg, feed_type, meals, meal_times, '
+        'Return JSON with keys: explanation, recommended_feed_kg, price_per_kg, feed_type, meals, meal_times, '
         'reasons, recommendations, cautions. meal_times must be HH:MM strings. '
+        'price_per_kg must be a realistic Bangladesh feed price in BDT/TK per kilogram, between 50 and 300. '
         'Keep recommendations practical and do not suggest medicine. '
         f'Data: {serialize_for_prompt(prompt_data)}'
     )
@@ -265,10 +325,17 @@ def get_stock_summary(pond):
     total_biomass = Decimal('0')
     weighted_rate = Decimal('0')
     total_quantity = 0
+    growth_weight_batches = 0
+    total_batches = 0
 
     for stock in stocks:
+        total_batches += 1
         latest_record = latest_records.get(stock.id)
-        source_weight = latest_record.average_weight_g if latest_record else stock.initial_average_weight_g
+        if latest_record is not None:
+            source_weight = latest_record.average_weight_g
+            growth_weight_batches += 1
+        else:
+            source_weight = stock.initial_average_weight_g
         average_weight = Decimal(str(source_weight))
         biomass = (Decimal(stock.current_quantity) * average_weight) / Decimal('1000')
         feeding_rate = get_feeding_rate(average_weight)
@@ -283,6 +350,13 @@ def get_stock_summary(pond):
         'current_quantity': total_quantity,
         'biomass_kg': kg(total_biomass),
         'feeding_rate': rate,
+        'weight_source': (
+            'current_growth'
+            if growth_weight_batches == total_batches and total_batches
+            else 'mixed_growth_and_stock'
+            if growth_weight_batches
+            else 'stock_initial_weight'
+        ),
     }
 
 

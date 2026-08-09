@@ -67,6 +67,10 @@ export function AuthProvider({ children }) {
     }
   }
 
+  function updateUser(userData) {
+    setUser(userData);
+  }
+
   const value = {
     user,
     isAuthenticated: Boolean(user),
@@ -74,6 +78,7 @@ export function AuthProvider({ children }) {
     login,
     signup,
     logout,
+    updateUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

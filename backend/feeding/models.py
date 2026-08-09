@@ -20,7 +20,7 @@ class FeedingRecommendation(models.Model):
     recommendation_date = models.DateField()
     recommended_feed_kg = models.DecimalField(max_digits=9, decimal_places=2)
     feed_type = models.CharField(max_length=120, default='Floating Feed 32%')
-    price_per_kg = models.DecimalField(max_digits=8, decimal_places=2, default=4.50)
+    price_per_kg = models.DecimalField(max_digits=8, decimal_places=2, default=135.00)
     estimated_cost = models.DecimalField(max_digits=10, decimal_places=2)
     meals = models.PositiveSmallIntegerField(default=2)
     schedule = models.JSONField(default=list)

@@ -4,7 +4,7 @@ from rest_framework import serializers
 
 from stocks.models import FishStock
 
-from .models import MarketListing, MarketOrder, MarketProfile
+from .models import MarketListing, MarketOrder, MarketProfile, make_transaction_code
 from .services import recommend_price
 
 
@@ -25,6 +25,7 @@ class MarketProfileSerializer(serializers.ModelSerializer):
             'business_name',
             'phone',
             'address',
+            'profile_picture',
             'created_at',
             'updated_at',
         )
@@ -51,6 +52,8 @@ class MarketListingSerializer(serializers.ModelSerializer):
             'source_type',
             'source_type_display',
             'species',
+            'average_height_cm',
+            'average_weight_g',
             'title',
             'quantity_kg',
             'available_quantity_kg',
@@ -124,6 +127,16 @@ class MarketListingSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Unit price must be greater than zero.')
         return value
 
+    def validate_average_height_cm(self, value):
+        if value <= Decimal('0'):
+            raise serializers.ValidationError('Average height must be greater than zero.')
+        return value
+
+    def validate_average_weight_g(self, value):
+        if value <= Decimal('0'):
+            raise serializers.ValidationError('Average weight must be greater than zero.')
+        return value
+
     def validate(self, attrs):
         request = self.context.get('request')
         seller = getattr(request, 'user', None)
@@ -182,6 +195,7 @@ class MarketOrderSerializer(serializers.ModelSerializer):
             'quantity_kg',
             'unit_price',
             'total_price',
+            'transaction_code',
             'status',
             'status_display',
             'buyer_full_name',
@@ -198,6 +212,7 @@ class MarketOrderSerializer(serializers.ModelSerializer):
             'buyer_name',
             'unit_price',
             'total_price',
+            'transaction_code',
             'status',
             'status_display',
             'seller_note',
@@ -210,6 +225,8 @@ class MarketOrderSerializer(serializers.ModelSerializer):
         return seller.get_full_name() or seller.username
 
     def get_buyer_name(self, order):
+        if order.buyer is None:
+            return order.buyer_full_name or 'Guest buyer'
         return order.buyer.get_full_name() or order.buyer.username
 
     def __init__(self, *args, **kwargs):
@@ -280,3 +297,164 @@ class MarketOrderSerializer(serializers.ModelSerializer):
             total_price=quantity * unit_price,
             **validated_data,
         )
+
+
+class PublicOrderTrackingSerializer(serializers.ModelSerializer):
+    listing_title = serializers.CharField(source='listing.title', read_only=True)
+    listing_species = serializers.CharField(source='listing.species', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+
+    class Meta:
+        model = MarketOrder
+        fields = (
+            'transaction_code',
+            'listing_title',
+            'listing_species',
+            'quantity_kg',
+            'total_price',
+            'status',
+            'status_display',
+            'created_at',
+            'updated_at',
+        )
+
+
+class GuestMarketOrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MarketOrder
+        fields = (
+            'listing',
+            'quantity_kg',
+            'buyer_full_name',
+            'buyer_address',
+            'buyer_contact_number',
+            'buyer_note',
+        )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['listing'].queryset = MarketListing.objects.filter(
+            status=MarketListing.Status.ACTIVE,
+            seller__email__iexact='shahoriyernadim@gmail.com',
+        )
+
+    def validate_quantity_kg(self, value):
+        if value <= Decimal('0'):
+            raise serializers.ValidationError('Quantity must be greater than zero.')
+        return value
+
+    def validate_buyer_full_name(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError('Name is required.')
+        return value
+
+    def validate_buyer_address(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError('Address is required.')
+        return value
+
+    def validate_buyer_contact_number(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError('Mobile number is required.')
+        return value
+
+    def validate(self, attrs):
+        listing = attrs.get('listing')
+        quantity = attrs.get('quantity_kg')
+        if listing and listing.status != MarketListing.Status.ACTIVE:
+            raise serializers.ValidationError({'listing': 'This fish is no longer available.'})
+        if listing and quantity and quantity > listing.available_quantity_kg:
+            raise serializers.ValidationError({'quantity_kg': 'Requested quantity is not available.'})
+        return attrs
+
+    def create(self, validated_data):
+        listing = validated_data['listing']
+        quantity = validated_data['quantity_kg']
+        unit_price = listing.unit_price
+        transaction_code = make_transaction_code()
+        return MarketOrder.objects.create(
+            buyer=None,
+            transaction_code=transaction_code,
+            unit_price=unit_price,
+            total_price=quantity * unit_price,
+            **validated_data,
+        )
+
+
+class GuestMarketCartItemSerializer(serializers.Serializer):
+    listing = serializers.PrimaryKeyRelatedField(queryset=MarketListing.objects.none())
+    quantity_kg = serializers.DecimalField(max_digits=10, decimal_places=2)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['listing'].queryset = MarketListing.objects.filter(
+            status=MarketListing.Status.ACTIVE,
+            seller__email__iexact='shahoriyernadim@gmail.com',
+        )
+
+    def validate_quantity_kg(self, value):
+        if value <= Decimal('0'):
+            raise serializers.ValidationError('Quantity must be greater than zero.')
+        return value
+
+
+class GuestMarketCartOrderSerializer(serializers.Serializer):
+    items = GuestMarketCartItemSerializer(many=True, allow_empty=False)
+    buyer_full_name = serializers.CharField(max_length=140)
+    buyer_address = serializers.CharField(max_length=260)
+    buyer_contact_number = serializers.CharField(max_length=40)
+    buyer_note = serializers.CharField(required=False, allow_blank=True)
+
+    def validate_buyer_full_name(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError('Name is required.')
+        return value
+
+    def validate_buyer_address(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError('Address is required.')
+        return value
+
+    def validate_buyer_contact_number(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError('Mobile number is required.')
+        return value
+
+    def validate_items(self, items):
+        listing_ids = [item['listing'].id for item in items]
+        if len(listing_ids) != len(set(listing_ids)):
+            raise serializers.ValidationError('Each fish listing can only appear once in the cart.')
+        for item in items:
+            if item['quantity_kg'] > item['listing'].available_quantity_kg:
+                raise serializers.ValidationError(
+                    f"Not enough stock available for {item['listing'].title}."
+                )
+        return items
+
+    def create(self, validated_data):
+        items = validated_data.pop('items')
+        orders = []
+        transaction_code = make_transaction_code()
+        for item in items:
+            listing = MarketListing.objects.select_for_update().get(pk=item['listing'].pk)
+            quantity = item['quantity_kg']
+            if listing.status != MarketListing.Status.ACTIVE or quantity > listing.available_quantity_kg:
+                raise serializers.ValidationError(
+                    f"{listing.title} is no longer available in the requested quantity."
+                )
+            orders.append(MarketOrder.objects.create(
+                listing=listing,
+                buyer=None,
+                transaction_code=transaction_code,
+                quantity_kg=quantity,
+                unit_price=listing.unit_price,
+                total_price=quantity * listing.unit_price,
+                **validated_data,
+            ))
+        return orders

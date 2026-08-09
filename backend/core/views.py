@@ -6,15 +6,15 @@ from rest_framework.response import Response
 
 from .content import HOMEPAGE_CONTENT
 from .models import Notification
-from .serializers import LoginSerializer, NotificationSerializer, SignupSerializer, UserSerializer
+from .serializers import LoginSerializer, NotificationSerializer, ProfileUpdateSerializer, SignupSerializer, UserSerializer
 from .services.farm_advisor import get_farm_advice
 from ponds.models import Pond
 
 
-def auth_payload(user, token):
+def auth_payload(user, token, request=None):
     return {
         'token': token.key,
-        'user': UserSerializer(user).data,
+        'user': UserSerializer(user, context={'request': request}).data,
     }
 
 
@@ -31,7 +31,7 @@ def signup(request):
     serializer.is_valid(raise_exception=True)
     user = serializer.save()
     token, _ = Token.objects.get_or_create(user=user)
-    return Response(auth_payload(user, token), status=status.HTTP_201_CREATED)
+    return Response(auth_payload(user, token, request), status=status.HTTP_201_CREATED)
 
 
 @api_view(['POST'])
@@ -41,13 +41,27 @@ def login(request):
     serializer.is_valid(raise_exception=True)
     user = serializer.validated_data['user']
     token, _ = Token.objects.get_or_create(user=user)
-    return Response(auth_payload(user, token))
+    return Response(auth_payload(user, token, request))
 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def me(request):
-    return Response({'user': UserSerializer(request.user).data})
+    return Response({'user': UserSerializer(request.user, context={'request': request}).data})
+
+
+@api_view(['PATCH', 'POST'])
+@permission_classes([IsAuthenticated])
+def profile(request):
+    serializer = ProfileUpdateSerializer(
+        instance=request.user,
+        data=request.data,
+        partial=True,
+        context={'request': request},
+    )
+    serializer.is_valid(raise_exception=True)
+    user = serializer.save()
+    return Response({'user': UserSerializer(user, context={'request': request}).data})
 
 
 @api_view(['POST'])

@@ -1,14 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { useAuth } from '../context/useAuth';
 import { getHomepage } from '../lib/api';
 import './HomePage.css';
 
 export default function HomePage() {
   const [content, setContent] = useState(null);
   const [loadError, setLoadError] = useState('');
-  const { user, logout } = useAuth();
   const heroLead = content?.hero.title.replace(content.hero.accent, '').trim();
 
   useEffect(() => {
@@ -44,7 +42,10 @@ export default function HomePage() {
                 <span className="logo-sub">Management System</span>
               </span>
             </span>
-            <Link to="/login" className="btn-nav">Sign In</Link>
+            <div className="nav-auth">
+              <Link to="/signup" className="btn-nav">Sign up</Link>
+              <Link to="/login" className="btn-nav">Log in</Link>
+            </div>
           </div>
         </nav>
         <main className="homepage-status" role={loadError ? 'alert' : 'status'}>
@@ -71,18 +72,18 @@ export default function HomePage() {
           <ul className="nav-links">
             {content.navLinks.map(link => (
               <li key={link}>
-                <a href={`#${link.toLowerCase()}`}>{link}</a>
+                {link === 'Fish Store' ? (
+                  <Link to="/fish-store">{link}</Link>
+                ) : (
+                  <a href={`#${link.toLowerCase().replace(/\s+/g, '-')}`}>{link}</a>
+                )}
               </li>
             ))}
           </ul>
-          {user ? (
-            <div className="nav-auth">
-              <span className="nav-user">Hi, {user.first_name || user.username}</span>
-              <button type="button" className="btn-nav" onClick={logout}>Sign Out</button>
-            </div>
-          ) : (
-            <Link to="/login" className="btn-nav">Sign In</Link>
-          )}
+          <div className="nav-auth">
+            <Link to="/signup" className="btn-nav">Sign up</Link>
+            <Link to="/login" className="btn-nav">Log in</Link>
+          </div>
         </div>
       </nav>
 
@@ -104,6 +105,21 @@ export default function HomePage() {
             <a href="#features" className="btn-ghost">See all features ↓</a>
           </div>
         </div>
+
+        <Link to="/fish-store" className="hero-store-link">
+          <span className="hero-store-icon" aria-hidden="true">
+            <svg viewBox="0 0 32 32" fill="none">
+              <path d="M5 8h3l2 14h12l3-10H9" />
+              <circle cx="13" cy="27" r="1.5" />
+              <circle cx="23" cy="27" r="1.5" />
+              <path d="M21 4v6M18 7h6" />
+            </svg>
+          </span>
+          <span>
+            <strong>Fish Store</strong>
+            <small>Fresh fish from Mashrafee →</small>
+          </span>
+        </Link>
 
         <div className="stats-strip">
           {content.stats.map(s => (
@@ -147,28 +163,38 @@ export default function HomePage() {
       </section>
 
       {/* ══════════════ PAGE 3 — Closing / CTA ══════════════ */}
-      <section className="page page-closing">
-        <div className="cta-inner">
+      <section className="page page-closing" id="about">
+        <div className="cta-inner cta-panel">
+          <span className="cta-mark" aria-hidden="true">✦</span>
           <p className="closing-eyebrow">Built for the whole fishery</p>
           <h2>{content.cta.title}</h2>
           <p className="cta-sub">{content.cta.subtitle}</p>
 
+          <div className="cta-points" aria-label="Platform benefits">
+            <span><strong>01</strong> Monitor</span>
+            <span><strong>02</strong> Plan</span>
+            <span><strong>03</strong> Grow</span>
+          </div>
+
           <ul className="role-pills" aria-label="Who E-Fisheries is built for">
             <li>Farmers</li>
             <li>Pond managers</li>
-            <li>Investors</li>
-            <li>Consultants</li>
+            <li>Buyers</li>
           </ul>
 
-          <Link to="/signup" className="btn-primary btn-large">{content.cta.buttonText}</Link>
+          <div className="cta-actions">
+            <Link to="/signup" className="btn-primary btn-large">{content.cta.buttonText}</Link>
+            <Link to="/fish-store" className="cta-store-link">Visit Fish Store →</Link>
+          </div>
         </div>
       </section>
 
       {/* ── Footer ── */}
-      <footer className="footer">
+      <footer className="footer" id="contact">
         <div className="footer-inner footer-grid">
 
           <div className="footer-col footer-brand">
+            <span className="footer-kicker">A smarter way to manage your fishery</span>
             <span className="logo logo-footer">
               <img src="/logo.png" alt="E-Fisheries logo" className="logo-icon" />
               <span className="logo-text">
@@ -187,13 +213,10 @@ export default function HomePage() {
             <ul className="footer-links">
               <li><a href="#home">Home</a></li>
               <li><a href="#features">Features</a></li>
+              <li><Link to="/fish-store">Fish Store</Link></li>
               <li><a href="#about">About</a></li>
-              {!user && (
-                <>
-                  <li><Link to="/login">Sign in</Link></li>
-                  <li><Link to="/signup">Sign up</Link></li>
-                </>
-              )}
+              <li><Link to="/login">Log in</Link></li>
+              <li><Link to="/signup">Sign up</Link></li>
             </ul>
           </div>
 
@@ -210,7 +233,7 @@ export default function HomePage() {
             <h4 className="footer-heading">Contact</h4>
             <ul className="footer-contact">
               <li>
-                <a href="mailto:support@efisheries.example">support@efisheries.example</a>
+                <a href="mailto:supportefisheries@gmail.com">supportefisheries@gmail.com</a>
               </li>
               <li>Dhaka, Bangladesh</li>
             </ul>

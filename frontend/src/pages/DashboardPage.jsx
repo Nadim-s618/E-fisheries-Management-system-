@@ -6,7 +6,6 @@ import { DashboardSummary } from '../components/dashboard/DashboardSummary';
 import { DashboardTopbar } from '../components/dashboard/DashboardTopbar';
 import { PondManagement } from '../components/dashboard/PondManagement';
 import { StockGrowthManagement } from '../components/dashboard/StockGrowthManagement';
-import AiAdvisorManagement from '../components/ai_advisor/AiAdvisorManagement';
 import FishHealthManagement from '../components/fish_health/FishHealthManagement';
 import FinancialManagement from '../components/financials/FinancialManagement';
 import MarketAnalysis from '../components/market_analysis/MarketAnalysis';
@@ -15,10 +14,16 @@ import FeedingManagement from '../components/feeding/FeedingManagement';
 import WeatherManagement from '../components/weather/WeatherManagement';
 import WaterQualityManagement from '../components/water_quality/WaterQualityManagement';
 import { useAuth } from '../context/useAuth';
-import { getNotifications, markNotificationRead, markNotificationsRead } from '../lib/api';
+import {
+  getNotifications,
+  getPondStocks,
+  getPonds,
+  getWaterQualityReadings,
+  markNotificationRead,
+  markNotificationsRead,
+} from '../lib/api';
 import {
   DASHBOARD_NAV_ITEMS,
-  DASHBOARD_STATS,
 } from '../data/dashboard';
 import './DashboardPage.css';
 
@@ -27,8 +32,15 @@ export default function DashboardPage() {
   const { user, logout } = useAuth();
   const [activeNav, setActiveNav] = useState('water');
   const [pondFormOpenSignal, setPondFormOpenSignal] = useState(0);
+  const [waterQualityTab, setWaterQualityTab] = useState('Dashboard');
   const [notifications, setNotifications] = useState([]);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [dashboardStats, setDashboardStats] = useState([
+    { label: 'Total Ponds', value: '—', sub: 'Loading data...', accent: 'teal' },
+    { label: 'Total Fish', value: '—', sub: 'Loading data...', accent: 'blue' },
+    { label: 'Avg Temperature', value: '—', sub: 'No readings yet', accent: 'amber' },
+    { label: 'Avg Oxygen', value: '—', sub: 'No readings yet', accent: 'green' },
+  ]);
 
   const loadNotifications = useCallback(async () => {
     if (!user) {
@@ -61,6 +73,80 @@ export default function DashboardPage() {
     };
   }, [loadNotifications, user]);
 
+  useEffect(() => {
+    let active = true;
+
+    async function loadDashboardStats() {
+      try {
+        const ponds = await getPonds();
+        const pondList = ponds || [];
+        const [stockResults, readingResults] = await Promise.all([
+          Promise.all(pondList.map(pond => getPondStocks(pond.id))),
+          Promise.all(pondList.map(pond => getWaterQualityReadings({ pond: pond.id }))),
+        ]);
+
+        if (!active) return;
+
+        const stocks = stockResults.flatMap(result => result || []);
+        const totalFish = stocks.reduce((total, stock) => total + Number(stock.current_quantity || 0), 0);
+        const latestReadings = readingResults
+          .map(result => (result || [])[0])
+          .filter(Boolean);
+        const temperatures = latestReadings
+          .map(reading => Number(reading.temperature))
+          .filter(Number.isFinite);
+        const oxygenValues = latestReadings
+          .map(reading => Number(reading.dissolved_oxygen))
+          .filter(Number.isFinite);
+        const average = values => values.length
+          ? values.reduce((sum, value) => sum + value, 0) / values.length
+          : null;
+        const averageTemperature = average(temperatures);
+        const averageOxygen = average(oxygenValues);
+        const activePonds = pondList.filter(pond => pond.status === 'active').length;
+
+        setDashboardStats([
+          {
+            label: 'Total Ponds',
+            value: pondList.length.toLocaleString(),
+            sub: `${activePonds} active`,
+            accent: 'teal',
+          },
+          {
+            label: 'Total Fish',
+            value: totalFish.toLocaleString(),
+            sub: 'across all ponds',
+            accent: 'blue',
+          },
+          {
+            label: 'Avg Temperature',
+            value: averageTemperature === null ? '—' : `${averageTemperature.toFixed(1)}°C`,
+            sub: `${temperatures.length} latest reading${temperatures.length === 1 ? '' : 's'}`,
+            accent: 'amber',
+          },
+          {
+            label: 'Avg Oxygen',
+            value: averageOxygen === null ? '—' : `${averageOxygen.toFixed(1)} mg/L`,
+            sub: `${oxygenValues.length} latest reading${oxygenValues.length === 1 ? '' : 's'}`,
+            accent: 'green',
+          },
+        ]);
+      } catch {
+        if (active) {
+          setDashboardStats(current => current.map(stat => ({
+            ...stat,
+            sub: 'Unable to load data',
+          })));
+        }
+      }
+    }
+
+    loadDashboardStats();
+    return () => {
+      active = false;
+    };
+  }, []);
+
   async function handleLogout() {
     await logout();
     setNotifications([]);
@@ -74,6 +160,16 @@ export default function DashboardPage() {
 
   function handleViewPonds() {
     setActiveNav('ponds');
+  }
+
+  function handleAddWaterTest() {
+    setWaterQualityTab('Add Reading');
+    setActiveNav('water');
+  }
+
+  function handleNavChange(navId) {
+    if (navId === 'water') setWaterQualityTab('Dashboard');
+    setActiveNav(navId);
   }
 
   async function handleNotificationRead(notification) {
@@ -105,6 +201,8 @@ export default function DashboardPage() {
   return (
     <div className="dp-root">
       <DashboardTopbar
+        onHomeClick={() => setActiveNav('home')}
+        onLogout={handleLogout}
         onPondsClick={handleViewPonds}
         onNotificationClick={loadNotifications}
         onNotificationRead={handleNotificationRead}
@@ -119,7 +217,7 @@ export default function DashboardPage() {
           activeNav={activeNav}
           navItems={DASHBOARD_NAV_ITEMS}
           onAddPond={handleAddPond}
-          onNavChange={setActiveNav}
+          onNavChange={handleNavChange}
           onLogout={handleLogout}
         />
 
@@ -127,12 +225,10 @@ export default function DashboardPage() {
         <main className="dp-main">
           {activeNav === 'ponds' ? (
             <PondManagement key={pondFormOpenSignal} openOnMount={pondFormOpenSignal > 0} />
-          ) : activeNav === 'advisor' ? (
-            <AiAdvisorManagement />
           ) : activeNav === 'stock' ? (
             <StockGrowthManagement />
           ) : activeNav === 'water' ? (
-            <WaterQualityManagement />
+            <WaterQualityManagement initialTab={waterQualityTab} />
           ) : activeNav === 'health' ? (
             <FishHealthManagement />
           ) : activeNav === 'weather' ? (
@@ -147,7 +243,7 @@ export default function DashboardPage() {
             <MarketBridge />
           ) : (
             <>
-              <DashboardSummary alerts={summaryAlerts} stats={DASHBOARD_STATS} />
+              <DashboardSummary alerts={summaryAlerts} stats={dashboardStats} />
 
               {/* Hero */}
               <section className="dp-hero">
@@ -160,7 +256,7 @@ export default function DashboardPage() {
                   </p>
                   <div className="dp-hero-actions">
                     <button type="button" className="dp-btn-primary" onClick={handleViewPonds}>View all ponds</button>
-                    <button type="button" className="dp-btn-secondary">Add water test</button>
+                    <button type="button" className="dp-btn-secondary" onClick={handleAddWaterTest}>Add water test</button>
                   </div>
                 </div>
 

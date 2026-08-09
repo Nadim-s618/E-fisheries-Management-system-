@@ -110,6 +110,14 @@ export function getCurrentUser() {
 }
 
 
+export function updateUserProfile(profile) {
+  return request('/auth/profile/', {
+    method: 'PATCH',
+    body: profile,
+  });
+}
+
+
 export function logout() {
   return request('/auth/logout/', {
     method: 'POST',
@@ -335,6 +343,28 @@ export function getMarketOrders() {
   return request('/market-bridge/orders/');
 }
 
+export function getPublicMashrafeeStore() {
+  return request('/market-bridge/public-store/');
+}
+
+export function createPublicMashrafeeOrder(order) {
+  return request('/market-bridge/public-store/orders/', {
+    method: 'POST',
+    body: order,
+  });
+}
+
+export function createPublicMashrafeeCartOrder(order) {
+  return request('/market-bridge/public-store/cart-orders/', {
+    method: 'POST',
+    body: order,
+  });
+}
+
+export function trackPublicMashrafeeOrder(code) {
+  return request(`/market-bridge/public-store/track/${encodeURIComponent(code)}/`);
+}
+
 export function createMarketOrder(order) {
   return request('/market-bridge/orders/', {
     method: 'POST',
@@ -351,6 +381,20 @@ export function acceptMarketOrder(id, body = {}) {
 
 export function rejectMarketOrder(id, body = {}) {
   return request(`/market-bridge/orders/${id}/reject/`, {
+    method: 'POST',
+    body,
+  });
+}
+
+export function shipMarketOrder(id, body = {}) {
+  return request(`/market-bridge/orders/${id}/ship/`, {
+    method: 'POST',
+    body,
+  });
+}
+
+export function deliverMarketOrder(id, body = {}) {
+  return request(`/market-bridge/orders/${id}/deliver/`, {
     method: 'POST',
     body,
   });

@@ -1,0 +1,841 @@
+/*
+  E-Fisheries — Fish Store of Mashrafee
+  Design concept: a real wet-market counter, not a generic storefront.
+  - Deep-water teal signage band with a hand-drawn wave into an ice-white counter
+  - Every listing carries a hanging "scale ticket" price tag (die-cut, tilted, punched hole)
+  - The order form reads like a market order slip: perforated edge, mono price line
+  Type: Bebas Neue (signage/condensed display), Inter (body), IBM Plex Mono (prices & weights)
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+.fish-store-page {
+  --teal-ink: #0c3a38;
+  --teal-mid: #0f6b62;
+  --aqua: #17b8a6;
+  --coral: #ff6f4c;
+  --coral-dark: #e35636;
+  --ice: #f2fbfa;
+  --foam: #ffffff;
+  --ink: #0b2e2c;
+  --ink-soft: #4a6a67;
+  --line: #cfe9e6;
+
+  background: var(--ice);
+  color: var(--ink);
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+}
+
+.fish-store-page * {
+  box-sizing: border-box;
+}
+
+/* ---------- Nav (thin override, sits on the teal band) ---------- */
+
+.fs-navbar.navbar {
+  background: var(--foam);
+  border-bottom: 1px solid var(--line);
+  position: relative;
+  z-index: 2;
+}
+
+.fs-navbar .logo-name {
+  color: var(--teal-ink);
+}
+
+.fs-navbar .logo-sub {
+  color: var(--ink-soft);
+}
+
+.fs-navbar .btn-nav {
+  color: var(--teal-ink);
+  border: 1px solid var(--line);
+  background: var(--ice);
+}
+
+.fs-navbar .btn-nav:hover {
+  background: var(--line);
+}
+
+.fs-navbar .btn-nav:focus-visible {
+  outline: 2px solid var(--aqua);
+  outline-offset: 2px;
+}
+
+/* ---------- Hero / signage band ---------- */
+
+.fs-hero {
+  position: relative;
+  background: linear-gradient(165deg, var(--teal-ink) 0%, var(--teal-mid) 100%);
+  padding: 1.5rem 1.5rem 4.5rem;
+  overflow: hidden;
+}
+
+.fs-cart-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  color: var(--foam);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+
+.fs-cart-button svg {
+  width: 1.45rem;
+  height: 1.45rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.fs-cart-button:hover {
+  color: var(--teal-ink);
+  background: var(--foam);
+  transform: translateY(-1px);
+}
+
+.fs-cart-button:focus-visible {
+  outline: 2px solid var(--coral);
+  outline-offset: 3px;
+}
+
+.fs-cart-count {
+  position: absolute;
+  top: -0.45rem;
+  right: -0.45rem;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.25rem;
+  color: var(--foam);
+  background: var(--coral);
+  border: 2px solid var(--teal-ink);
+  border-radius: 999px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.05rem;
+  text-align: center;
+}
+
+.fs-hero-tools {
+  position: absolute;
+  top: 1.5rem;
+  right: max(1.5rem, calc((100% - 1160px) / 2));
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.fs-hero-cart {
+  position: relative;
+  top: auto;
+  right: auto;
+  color: var(--foam);
+  border-color: rgba(255, 255, 255, 0.55);
+}
+
+.fs-hero-cart:hover {
+  color: var(--teal-ink);
+  background: var(--foam);
+  border-color: var(--foam);
+}
+
+.fs-search-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  color: var(--foam);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.fs-search-button svg {
+  width: 1.4rem;
+  height: 1.4rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.fs-search-button:hover {
+  color: var(--teal-ink);
+  background: var(--foam);
+}
+
+.fs-search-button:focus-visible {
+  outline: 2px solid var(--coral);
+  outline-offset: 3px;
+}
+
+.fs-search-box input {
+  width: 180px;
+  height: 2.75rem;
+  padding: 0 0.8rem;
+  color: var(--ink);
+  background: var(--foam);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 10px;
+  font: inherit;
+}
+
+.fs-search-box input:focus {
+  outline: 2px solid var(--coral);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.fs-hero-inner {
+  max-width: 780px;
+  margin: 2.5rem auto 0;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.fs-hero .store-back-link {
+  display: inline-block;
+  color: rgba(255, 255, 255, 0.75);
+  text-decoration: none;
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+  transition: color 0.15s ease;
+}
+
+.fs-hero .store-back-link:hover {
+  color: var(--foam);
+}
+
+.fs-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  color: var(--aqua);
+  margin: 0 0 0.75rem;
+}
+
+.fs-title {
+  font-family: 'Bebas Neue', 'Inter', sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  font-size: clamp(2.75rem, 8vw, 5rem);
+  line-height: 0.95;
+  color: var(--foam);
+  margin: 0 0 1rem;
+  text-transform: uppercase;
+}
+
+.fs-title-of {
+  color: var(--aqua);
+  font-size: 0.55em;
+  text-transform: lowercase;
+  padding: 0 0.15em;
+}
+
+.fs-sub {
+  color: rgba(242, 251, 250, 0.8);
+  font-size: 1.05rem;
+  max-width: 46ch;
+  margin: 0 auto;
+}
+
+.fs-wave {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  width: 100%;
+  height: 46px;
+  fill: var(--ice);
+}
+
+/* ---------- Main / states ---------- */
+
+.fs-main {
+  padding: 3rem 1.5rem 5rem;
+}
+
+.fs-banner {
+  max-width: 640px;
+  margin: 0 auto 2rem;
+  padding: 0.9rem 1.2rem;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+.fs-banner-success {
+  background: #e3f7ef;
+  color: #0c6b47;
+  border: 1px solid #b7e8d3;
+}
+
+.fs-banner-error {
+  background: #fdeceb;
+  color: var(--coral-dark);
+  border: 1px solid #f7c9c0;
+}
+
+.fs-tracking-panel {
+  max-width: 760px;
+  margin: 0 auto 2.5rem;
+  padding: 1.25rem;
+  background: var(--foam);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 8px 20px -18px rgba(12, 58, 56, 0.5);
+}
+
+.fs-tracking-panel h2 {
+  margin: 0.2rem 0 0.3rem;
+  color: var(--ink);
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.7rem;
+  font-weight: 400;
+}
+
+.fs-tracking-panel p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+}
+
+.fs-tracking-form {
+  display: flex;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.fs-tracking-form input {
+  min-width: 0;
+  flex: 1;
+  padding: 0.7rem 0.8rem;
+  color: var(--ink);
+  background: var(--ice);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.fs-tracking-form input:focus {
+  outline: 2px solid var(--aqua);
+  outline-offset: 1px;
+}
+
+.fs-tracking-form .fs-submit-button { flex: 0 0 auto; }
+
+.fs-tracking-result {
+  margin-top: 1rem;
+  padding-top: 0.9rem;
+  border-top: 1px dashed var(--line);
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+}
+
+.fs-tracking-result > strong {
+  color: var(--coral-dark);
+  font-family: 'IBM Plex Mono', monospace;
+  letter-spacing: 0.08em;
+}
+
+.fs-tracking-result > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 1rem;
+  margin-top: 0.55rem;
+}
+
+.fs-tracking-result b { color: var(--teal-mid); }
+
+.fs-state {
+  text-align: center;
+  padding: 4rem 1rem;
+  color: var(--ink-soft);
+  font-size: 1.05rem;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.fs-state-icon {
+  display: block;
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+  filter: grayscale(0.15);
+}
+
+/* ---------- Grid & cards ---------- */
+
+.fs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 2.25rem 1.75rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.fs-card {
+  position: relative;
+  background: var(--foam);
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  box-shadow: 0 10px 24px -16px rgba(12, 58, 56, 0.35);
+  padding-top: 0.5rem;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.fs-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 30px -16px rgba(12, 58, 56, 0.45);
+}
+
+.fs-card:hover .fs-tag {
+  transform: rotate(0deg) translateY(-2px);
+}
+
+/* Scale ticket — the signature element */
+
+.fs-tag {
+  position: absolute;
+  top: -14px;
+  right: 14px;
+  z-index: 2;
+  background: var(--coral);
+  color: var(--foam);
+  padding: 0.4rem 0.7rem 0.45rem 1.1rem;
+  border-radius: 3px 8px 8px 3px;
+  transform: rotate(var(--fs-tag-tilt, -2deg));
+  transform-origin: top left;
+  box-shadow: 0 6px 10px -4px rgba(227, 86, 54, 0.55);
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  transition: transform 0.18s ease;
+}
+
+.fs-tag::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-right: 7px solid var(--coral);
+}
+
+.fs-tag-hole {
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 5px;
+  height: 5px;
+  background: var(--ice);
+  border-radius: 50%;
+}
+
+.fs-tag-price {
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 600;
+  font-size: 1.05rem;
+  padding-left: 0.5rem;
+}
+
+.fs-tag-unit {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65rem;
+  opacity: 0.85;
+}
+
+.fs-card-image {
+  height: 150px;
+  margin: 0 1rem;
+  border-radius: 10px;
+  background: linear-gradient(160deg, #dff3f1 0%, #c6e9e5 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.fs-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.fs-card-initials {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.5rem;
+  color: var(--teal-mid);
+  opacity: 0.5;
+}
+
+.fs-card-body {
+  padding: 1.1rem 1.25rem 1.4rem;
+}
+
+.fs-species {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--teal-mid);
+}
+
+.fs-card-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  font-size: 1.6rem;
+  margin: 0.2rem 0 0.15rem;
+  color: var(--ink);
+}
+
+.fs-location {
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+  margin: 0 0 0.75rem;
+}
+
+.fs-stock-line {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  margin-bottom: 1rem;
+}
+
+.fs-stock-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--aqua);
+  box-shadow: 0 0 0 3px rgba(23, 184, 166, 0.18);
+}
+
+.fs-measurements {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+  margin: -0.25rem 0 1rem;
+  color: var(--ink-soft);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+}
+
+.fs-card-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.55rem;
+}
+
+.fs-cart-add-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-width: 0;
+  padding: 0.7rem 0.55rem;
+  border: 1px solid var(--aqua);
+  border-radius: 8px;
+  color: var(--teal-mid);
+  background: var(--foam);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.fs-add-cart-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.9;
+}
+
+.fs-cart-add-button:hover {
+  color: var(--foam);
+  background: var(--aqua);
+}
+
+.fs-order-button {
+  width: 100%;
+  padding: 0.7rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background: var(--teal-ink);
+  color: var(--foam);
+  font-weight: 600;
+  font-size: 0.92rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.fs-order-button:hover {
+  background: var(--teal-mid);
+}
+
+.fs-order-button:focus-visible {
+  outline: 2px solid var(--coral);
+  outline-offset: 2px;
+}
+
+/* ---------- Order slip modal ---------- */
+
+.fs-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 46, 44, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  z-index: 50;
+}
+
+.fs-slip {
+  position: relative;
+  background: var(--foam);
+  width: 100%;
+  max-width: 440px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 12px;
+  padding: 1.75rem 1.75rem 1.5rem;
+  box-shadow: 0 24px 50px -12px rgba(11, 46, 44, 0.5);
+}
+
+.fs-slip-perforation {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-image: linear-gradient(to right, var(--line) 50%, transparent 50%);
+  background-size: 12px 3px;
+}
+
+.fs-slip-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+.fs-slip-header h2 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-weight: 400;
+  font-size: 1.6rem;
+  margin: 0.15rem 0 0;
+  color: var(--ink);
+}
+
+.fs-eyebrow-small {
+  font-size: 0.68rem;
+}
+
+.fs-slip-close {
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  line-height: 1;
+  color: var(--ink-soft);
+  cursor: pointer;
+  padding: 0.2rem;
+}
+
+.fs-slip-close:hover {
+  color: var(--ink);
+}
+
+.fs-slip-close:focus-visible {
+  outline: 2px solid var(--coral);
+  outline-offset: 2px;
+}
+
+.fs-slip-price {
+  font-family: 'IBM Plex Mono', monospace;
+  border-top: 1px dashed var(--line);
+  border-bottom: 1px dashed var(--line);
+  padding: 0.65rem 0;
+  margin: 0.75rem 0 1.25rem;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.fs-slip-price-value {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--coral-dark);
+}
+
+.fs-slip-price-unit {
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+}
+
+.fs-slip-price-stock {
+  margin-left: auto;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+}
+
+.fs-field {
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.fs-field span {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 0.35rem;
+}
+
+.fs-field input,
+.fs-field textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.92rem;
+  color: var(--ink);
+  background: var(--ice);
+  resize: vertical;
+}
+
+.fs-field input:focus-visible,
+.fs-field textarea:focus-visible {
+  outline: 2px solid var(--aqua);
+  outline-offset: 1px;
+  border-color: var(--aqua);
+}
+
+.fs-slip-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.fs-cancel-button,
+.fs-submit-button {
+  flex: 1;
+  padding: 0.7rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.92rem;
+  cursor: pointer;
+  border: none;
+}
+
+.fs-cancel-button {
+  background: var(--ice);
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+}
+
+.fs-cancel-button:hover {
+  background: var(--line);
+}
+
+.fs-submit-button {
+  background: var(--coral);
+  color: var(--foam);
+}
+
+.fs-submit-button:hover {
+  background: var(--coral-dark);
+}
+
+.fs-submit-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.fs-cancel-button:focus-visible,
+.fs-submit-button:focus-visible {
+  outline: 2px solid var(--teal-ink);
+  outline-offset: 2px;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 640px) {
+  .fs-hero-tools {
+    right: 1rem;
+  }
+
+  .fs-search-box input {
+    width: 140px;
+  }
+
+  .fs-hero {
+    padding: 1.25rem 1.25rem 3.5rem;
+  }
+
+  .fs-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .fs-slip {
+    padding: 1.5rem 1.25rem 1.25rem;
+  }
+
+  .fs-tracking-form {
+    flex-direction: column;
+  }
+
+  .fs-tracking-form .fs-submit-button {
+    width: 100%;
+  }
+}
+
+/* ---------- Motion preference ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .fs-card,
+  .fs-tag,
+  .fs-order-button {
+    transition: none !important;
+  }
+}
