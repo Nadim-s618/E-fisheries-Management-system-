@@ -106,7 +106,6 @@ export default function MarketBridge() {
   const currentUserId = user?.id;
   const [activeTab, setActiveTab] = useState('sell');
   const [profile, setProfile] = useState(null);
-  const [listings, setListings] = useState([]);
   const [myListings, setMyListings] = useState([]);
   const [orders, setOrders] = useState([]);
   const [ponds, setPonds] = useState([]);
@@ -121,11 +120,13 @@ export default function MarketBridge() {
   const canSell = profile?.can_sell ?? user?.market_profile?.can_sell ?? true;
 
   const summary = useMemo(() => {
-    const activeListings = listings.filter(item => item.status === 'active');
+    const activeListings = myListings.filter(item => (
+      item.status === 'active' && Number(item.available_quantity_kg || 0) > 0
+    ));
     const availableKg = activeListings.reduce((total, item) => total + Number(item.available_quantity_kg || 0), 0);
     const pendingOrders = orders.filter(order => order.status === 'pending').length;
     return { activeListings: activeListings.length, availableKg, pendingOrders };
-  }, [listings, orders]);
+  }, [myListings, orders]);
 
   useEffect(() => {
     let mounted = true;
@@ -134,16 +135,14 @@ export default function MarketBridge() {
       setLoading(true);
       setError('');
       try {
-        const [profileData, listingData, myListingData, orderData, pondData] = await Promise.all([
+        const [profileData, myListingData, orderData, pondData] = await Promise.all([
           getMarketProfile(),
-          getMarketListings(),
           getMarketListings({ mine: true }),
           getMarketOrders(),
           getPonds(),
         ]);
         if (!mounted) return;
         setProfile(profileData);
-        setListings(listingData || []);
         setMyListings(myListingData || []);
         setOrders((orderData || []).filter(order => String(order.seller) === String(currentUserId)));
         setPonds(pondData || []);
@@ -183,12 +182,10 @@ export default function MarketBridge() {
   }, [selectedPondId]);
 
   async function reloadMarket() {
-    const [listingData, myListingData, orderData] = await Promise.all([
-      getMarketListings(),
+    const [myListingData, orderData] = await Promise.all([
       getMarketListings({ mine: true }),
       getMarketOrders(),
     ]);
-    setListings(listingData || []);
     setMyListings(myListingData || []);
     setOrders((orderData || []).filter(order => String(order.seller) === String(currentUserId)));
   }
