@@ -1,10 +1,15 @@
 from decimal import Decimal
+import secrets
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 
 from stocks.models import FishStock
+
+
+def make_transaction_code():
+    return f'MF-{secrets.token_hex(4).upper()}'
 
 
 class MarketProfile(models.Model):
@@ -23,6 +28,7 @@ class MarketProfile(models.Model):
     business_name = models.CharField(max_length=140, blank=True)
     phone = models.CharField(max_length=40, blank=True)
     address = models.CharField(max_length=220, blank=True)
+    profile_picture = models.FileField(upload_to='profile_pictures/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -70,6 +76,8 @@ class MarketListing(models.Model):
         default=SourceType.MANUAL,
     )
     species = models.CharField(max_length=120)
+    average_height_cm = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    average_weight_g = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     title = models.CharField(max_length=160)
     quantity_kg = models.DecimalField(max_digits=10, decimal_places=2)
     available_quantity_kg = models.DecimalField(max_digits=10, decimal_places=2)
@@ -133,6 +141,10 @@ class MarketListing(models.Model):
             errors['available_quantity_kg'] = 'Available quantity cannot exceed listed quantity.'
         if self.unit_price is not None and self.unit_price <= Decimal('0'):
             errors['unit_price'] = 'Unit price must be greater than zero.'
+        if self.average_height_cm is not None and self.average_height_cm <= Decimal('0'):
+            errors['average_height_cm'] = 'Average height must be greater than zero.'
+        if self.average_weight_g is not None and self.average_weight_g <= Decimal('0'):
+            errors['average_weight_g'] = 'Average weight must be greater than zero.'
 
         if errors:
             raise ValidationError(errors)
@@ -145,6 +157,8 @@ class MarketOrder(models.Model):
     class Status(models.TextChoices):
         PENDING = 'pending', 'Pending'
         ACCEPTED = 'accepted', 'Accepted'
+        SHIPPED = 'shipped', 'Shipped'
+        OUT_FOR_DELIVERY = 'out_for_delivery', 'Out for delivery'
         REJECTED = 'rejected', 'Rejected'
         COMPLETED = 'completed', 'Completed'
         CANCELLED = 'cancelled', 'Cancelled'
@@ -156,12 +170,15 @@ class MarketOrder(models.Model):
     )
     buyer = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name='market_orders',
+        null=True,
+        blank=True,
     )
     quantity_kg = models.DecimalField(max_digits=10, decimal_places=2)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
     total_price = models.DecimalField(max_digits=12, decimal_places=2)
+    transaction_code = models.CharField(max_length=20, default='', blank=True, db_index=True)
     status = models.CharField(max_length=16, choices=Status.choices, default=Status.PENDING)
     buyer_full_name = models.CharField(max_length=140, default='')
     buyer_address = models.CharField(max_length=260, default='')
@@ -211,3 +228,8 @@ class MarketOrder(models.Model):
 
     def __str__(self):
         return f'Order #{self.pk or "new"} for {self.listing}'
+
+    def save(self, *args, **kwargs):
+        if not self.transaction_code:
+            self.transaction_code = make_transaction_code()
+        super().save(*args, **kwargs)

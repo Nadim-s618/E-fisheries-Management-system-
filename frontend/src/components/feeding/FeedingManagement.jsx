@@ -12,7 +12,7 @@ import './FeedingManagement.css';
 const TABS = ['Recommendation', 'Tracker', 'History'];
 
 function formatCurrency(value) {
-  return `RM${Number(value || 0).toLocaleString(undefined, {
+  return `TK ${Number(value || 0).toLocaleString(undefined, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
@@ -42,7 +42,7 @@ function emptyEditForm(recommendation) {
   return {
     recommended_feed_kg: recommendation?.recommended_feed_kg || '',
     feed_type: recommendation?.feed_type || 'Floating Feed 32%',
-    price_per_kg: recommendation?.price_per_kg || '4.50',
+    price_per_kg: recommendation?.price_per_kg || '135.00',
     meals: recommendation?.meals || 2,
     meal_times: (recommendation?.schedule || []).map(item => item.time),
   };
@@ -123,7 +123,7 @@ function RecommendationCard({ recommendation, onAccept, onEdit, saving }) {
         <button type="button" className="ff-btn ff-btn-primary" onClick={onAccept} disabled={saving || !isDraft}>
           {saving ? 'Accepting...' : isDraft ? 'Accept' : 'Tracking'}
         </button>
-        <button type="button" className="ff-btn ff-btn-secondary" onClick={onEdit} disabled={saving || !isDraft}>
+        <button type="button" className="ff-btn ff-btn-secondary" onClick={onEdit} disabled={saving}>
           Edit
         </button>
       </div>
@@ -179,7 +179,7 @@ function EditPanel({ recommendation, onCancel, onSave, saving }) {
           <input name="feed_type" value={form.feed_type} onChange={handleChange} required />
         </label>
         <label>
-          <span>Price (RM/kg)</span>
+        <span>Price (TK/kg)</span>
           <input name="price_per_kg" type="number" min="0" step="0.01" value={form.price_per_kg} onChange={handleChange} required />
         </label>
         <label>
