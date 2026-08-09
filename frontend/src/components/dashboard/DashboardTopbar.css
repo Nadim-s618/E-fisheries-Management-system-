@@ -86,8 +86,12 @@
   position: relative;
   padding: 8px 14px;
   border-radius: 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
   font-size: 13.5px;
   font-weight: 500;
+  font-family: inherit;
   color: var(--dp-text);
   text-decoration: none;
   transition: color 0.2s var(--dp-ease), background 0.2s var(--dp-ease);
@@ -114,6 +118,132 @@
 
 .dp-nav-link:hover::after {
   transform: scaleX(1);
+}
+
+.dp-tips-wrapper {
+  position: relative;
+}
+
+.dp-tips-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(380px, calc(100vw - 24px));
+  max-height: min(560px, calc(100vh - 90px));
+  overflow-y: auto;
+  padding: 16px;
+  border: 1px solid var(--dp-border);
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 14px 34px -16px rgba(16, 24, 40, 0.3);
+  z-index: 35;
+}
+
+.dp-tips-header {
+  display: grid;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--dp-border);
+}
+
+.dp-tips-header > div:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.dp-tips-kicker {
+  color: var(--dp-accent);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dp-tips-header strong,
+.dp-tips-section strong {
+  color: var(--dp-text-hover);
+}
+
+.dp-tips-field {
+  display: grid;
+  gap: 5px;
+}
+
+.dp-tips-field span {
+  color: var(--dp-text);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.dp-tips-field select {
+  width: 100%;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--dp-border);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--dp-text-hover);
+  font: inherit;
+}
+
+.dp-tips-content {
+  display: grid;
+  gap: 12px;
+  padding-top: 12px;
+}
+
+.dp-tips-summary,
+.dp-tips-section,
+.dp-tips-state {
+  padding: 11px 12px;
+  border-radius: 10px;
+  background: #f8fafb;
+}
+
+.dp-tips-summary {
+  display: grid;
+  gap: 4px;
+}
+
+.dp-tips-summary > span {
+  color: var(--dp-accent);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.dp-tips-summary p {
+  margin: 5px 0 0;
+  color: var(--dp-text);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.dp-tips-section {
+  display: grid;
+  gap: 6px;
+}
+
+.dp-tips-section ul {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding-left: 18px;
+  color: var(--dp-text);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.dp-tips-state {
+  margin-top: 12px;
+  color: var(--dp-text);
+  font-size: 12px;
+  text-align: center;
+}
+
+.dp-tips-error {
+  color: #b42318;
+  background: #fff1f0;
 }
 
 /* Right section */

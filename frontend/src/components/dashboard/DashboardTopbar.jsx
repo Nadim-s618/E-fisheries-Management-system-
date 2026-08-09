@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import { getAiAdvisor, getPonds } from '../../lib/api';
 import './DashboardTopbar.css';
 
 export function DashboardTopbar({
@@ -16,6 +17,12 @@ export function DashboardTopbar({
   const [isSearchActive, setIsSearchActive] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isTipsOpen, setIsTipsOpen] = useState(false);
+  const [ponds, setPonds] = useState([]);
+  const [selectedPondId, setSelectedPondId] = useState('');
+  const [tips, setTips] = useState(null);
+  const [tipsLoading, setTipsLoading] = useState(false);
+  const [tipsError, setTipsError] = useState('');
   const navigate = useNavigate();
 
   const notificationCount = notifications.length;
@@ -36,7 +43,49 @@ export function DashboardTopbar({
 
   const handleProfileClick = () => {
     setIsNotificationOpen(false);
+    setIsTipsOpen(false);
     setIsProfileOpen(!isProfileOpen);
+  };
+
+  const loadTips = async (pondId) => {
+    if (!pondId) return;
+
+    setSelectedPondId(String(pondId));
+    setTipsLoading(true);
+    setTipsError('');
+
+    try {
+      const data = await getAiAdvisor(pondId);
+      setTips(data);
+    } catch (error) {
+      setTips(null);
+      setTipsError(error.message || 'Unable to load tips.');
+    } finally {
+      setTipsLoading(false);
+    }
+  };
+
+  const handleTipsClick = async () => {
+    setIsNotificationOpen(false);
+    setIsProfileOpen(false);
+    const opening = !isTipsOpen;
+    setIsTipsOpen(opening);
+
+    if (opening && ponds.length === 0) {
+      setTipsLoading(true);
+      setTipsError('');
+      try {
+        const data = await getPonds();
+        const availablePonds = data || [];
+        setPonds(availablePonds);
+        if (availablePonds[0]?.id) {
+          await loadTips(availablePonds[0].id);
+        }
+      } catch (error) {
+        setTipsError(error.message || 'Unable to load ponds.');
+        setTipsLoading(false);
+      }
+    }
   };
 
   const handleNavigation = (path) => {
@@ -85,9 +134,70 @@ export function DashboardTopbar({
         >
           Ponds
         </button>
-        <a href="#tips" className="dp-nav-link">
-          Tips
-        </a>
+        <div className="dp-tips-wrapper">
+          <button
+            type="button"
+            className="dp-nav-link"
+            onClick={handleTipsClick}
+            aria-expanded={isTipsOpen}
+            aria-controls="dashboard-tips-menu"
+          >
+            Tips
+          </button>
+
+          {isTipsOpen && (
+            <div id="dashboard-tips-menu" className="dp-tips-menu" role="dialog" aria-label="Pond tips">
+              <div className="dp-tips-header">
+                <div>
+                  <span className="dp-tips-kicker">AI Advisor</span>
+                  <strong>Pond tips</strong>
+                </div>
+                <label className="dp-tips-field">
+                  <span>Pond</span>
+                  <select
+                    value={selectedPondId}
+                    onChange={event => loadTips(event.target.value)}
+                    disabled={!ponds.length || tipsLoading}
+                  >
+                    {!ponds.length ? (
+                      <option value="">No ponds</option>
+                    ) : ponds.map(pond => (
+                      <option key={pond.id} value={pond.id}>{pond.name}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              {tipsLoading ? (
+                <div className="dp-tips-state">Loading tips...</div>
+              ) : tipsError ? (
+                <div className="dp-tips-state dp-tips-error">{tipsError}</div>
+              ) : !ponds.length ? (
+                <div className="dp-tips-state">Add a pond before generating tips.</div>
+              ) : tips ? (
+                <div className="dp-tips-content">
+                  <div className="dp-tips-summary">
+                    <span>{tips.ai_enabled ? 'Gemini AI' : 'Fallback Advisor'}</span>
+                    <strong>{tips.priority || 'Normal'}</strong>
+                    <p>{tips.summary}</p>
+                  </div>
+                  {[
+                    ['Recommendations', tips.recommendations],
+                    ['Risks', tips.risks],
+                    ['Next actions', tips.next_actions],
+                  ].map(([title, items]) => items?.length > 0 && (
+                    <section className="dp-tips-section" key={title}>
+                      <strong>{title}</strong>
+                      <ul>{items.map(item => <li key={item}>{item}</li>)}</ul>
+                    </section>
+                  ))}
+                </div>
+              ) : (
+                <div className="dp-tips-state">Select a pond to generate tips.</div>
+              )}
+            </div>
+          )}
+        </div>
       </nav>
 
       {/* Right Section */}
