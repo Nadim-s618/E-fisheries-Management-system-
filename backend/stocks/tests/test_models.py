@@ -9,7 +9,7 @@ from unittest.mock import MagicMock
 
 from django.test import SimpleTestCase
 
-from store.models import FishStock
+from ..models import FishStock
 
 
 def make_stock(**overrides):
