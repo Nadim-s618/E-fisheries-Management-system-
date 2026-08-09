@@ -141,12 +141,6 @@ def edit_recommendation(request, pk):
     if not recommendation:
         return Response({'detail': 'Feeding recommendation not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-    if recommendation.sessions.filter(status=FeedingSession.Status.COMPLETED).exists():
-        return Response(
-            {'detail': 'Completed feeding plans cannot be edited.'},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
-
     serializer = FeedingRecommendationEditSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     recommendation = update_recommendation_from_edit(recommendation, serializer.validated_data)

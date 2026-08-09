@@ -1,7 +1,9 @@
 import json
+import ssl
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
+import certifi
 from django.conf import settings
 
 
@@ -76,12 +78,23 @@ def post_generate_content(api_key, payload):
     )
 
     try:
+        ssl_context = ssl.create_default_context(cafile=certifi.where())
         with urlopen(
             request,
+            context=ssl_context,
             timeout=getattr(settings, 'GEMINI_TIMEOUT_SECONDS', DEFAULT_TIMEOUT_SECONDS),
         ) as response:
             return json.loads(response.read().decode('utf-8'))
-    except (HTTPError, URLError, OSError, TimeoutError, json.JSONDecodeError) as exc:
+    except HTTPError as exc:
+        try:
+            detail = exc.read().decode('utf-8')[:500]
+        except Exception:
+            detail = ''
+        message = f'Gemini returned HTTP {exc.code}'
+        if detail:
+            message = f'{message}: {detail}'
+        raise GeminiError(message) from exc
+    except (URLError, OSError, TimeoutError, json.JSONDecodeError) as exc:
         raise GeminiError(str(exc)) from exc
 
 

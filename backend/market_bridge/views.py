@@ -7,14 +7,21 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from stocks.models import FishStock
 
 from .models import MarketListing, MarketOrder
-from .serializers import MarketListingSerializer, MarketOrderSerializer, MarketProfileSerializer
+from .serializers import (
+    GuestMarketCartOrderSerializer,
+    GuestMarketOrderSerializer,
+    MarketListingSerializer,
+    MarketOrderSerializer,
+    MarketProfileSerializer,
+    PublicOrderTrackingSerializer,
+)
 from .services import get_or_create_market_profile, recommend_price
 
 
@@ -56,6 +63,64 @@ class PriceRecommendationView(APIView):
             location = location or stock.pond.location
 
         return Response(recommend_price(species, location, quantity_kg))
+
+
+class PublicMashrafeeStoreView(APIView):
+    permission_classes = (AllowAny,)
+
+    def get(self, request):
+        listings = MarketListing.objects.select_related('seller').filter(
+            seller__email__iexact='shahoriyernadim@gmail.com',
+            status=MarketListing.Status.ACTIVE,
+            available_quantity_kg__gt=0,
+        )
+        return Response(MarketListingSerializer(
+            listings,
+            many=True,
+            context={'request': request},
+        ).data)
+
+
+class PublicMashrafeeOrderView(APIView):
+    permission_classes = (AllowAny,)
+
+    def post(self, request):
+        serializer = GuestMarketOrderSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        order = serializer.save()
+        return Response(
+            MarketOrderSerializer(order, context={'request': request}).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class PublicMashrafeeCartOrderView(APIView):
+    permission_classes = (AllowAny,)
+
+    @transaction.atomic
+    def post(self, request):
+        serializer = GuestMarketCartOrderSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        orders = serializer.save()
+        return Response(
+            MarketOrderSerializer(orders, many=True, context={'request': request}).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class PublicMashrafeeOrderTrackingView(APIView):
+    permission_classes = (AllowAny,)
+
+    def get(self, request, code):
+        orders = MarketOrder.objects.select_related('listing').filter(
+            transaction_code__iexact=code.strip(),
+        )
+        if not orders.exists():
+            raise ValidationError({'transaction_code': 'Transaction code not found.'})
+        return Response({
+            'transaction_code': code.upper(),
+            'orders': PublicOrderTrackingSerializer(orders, many=True).data,
+        })
 
 
 class MarketListingViewSet(viewsets.ModelViewSet):
@@ -132,12 +197,30 @@ class MarketOrderViewSet(viewsets.ModelViewSet):
         )
 
     @action(detail=True, methods=['post'])
+    def ship(self, request, pk=None):
+        return self._seller_transition(
+            pk,
+            MarketOrder.Status.SHIPPED,
+            seller_note=request.data.get('seller_note', ''),
+            allowed_current={MarketOrder.Status.ACCEPTED},
+        )
+
+    @action(detail=True, methods=['post'])
+    def deliver(self, request, pk=None):
+        return self._seller_transition(
+            pk,
+            MarketOrder.Status.OUT_FOR_DELIVERY,
+            seller_note=request.data.get('seller_note', ''),
+            allowed_current={MarketOrder.Status.SHIPPED},
+        )
+
+    @action(detail=True, methods=['post'])
     def complete(self, request, pk=None):
         return self._seller_transition(
             pk,
             MarketOrder.Status.COMPLETED,
             seller_note=request.data.get('seller_note', ''),
-            allowed_current={MarketOrder.Status.ACCEPTED},
+            allowed_current={MarketOrder.Status.OUT_FOR_DELIVERY},
         )
 
     @action(detail=True, methods=['post'])
@@ -163,7 +246,10 @@ class MarketOrderViewSet(viewsets.ModelViewSet):
         queryset = (
             MarketOrder.objects
             .select_for_update()
-            .select_related('listing', 'listing__seller', 'buyer')
+            # Do not join the nullable guest-buyer relation while applying
+            # FOR UPDATE; PostgreSQL rejects locks on the nullable side of
+            # an outer join.
+            .select_related('listing', 'listing__seller')
         )
         order = get_object_or_404(queryset, pk=pk)
         if not self.request.user.is_staff and order.listing.seller_id != self.request.user.id:
