@@ -404,6 +404,8 @@
 
 .mb-badge-active,
 .mb-badge-accepted,
+.mb-badge-shipped,
+.mb-badge-out_for_delivery,
 .mb-badge-completed {
   background: var(--mb-teal-tint);
   color: var(--mb-teal-dark);
