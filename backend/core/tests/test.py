@@ -8,7 +8,7 @@ from django.test import SimpleTestCase
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 
-from .content import HOMEPAGE_CONTENT
+from core.content import HOMEPAGE_CONTENT
 
 
 User = get_user_model()

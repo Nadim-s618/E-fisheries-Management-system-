@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from rest_framework.test import APITestCase
 
-from .models import Pond
+from ponds.models import Pond
 
 
 User = get_user_model()
@@ -84,12 +84,10 @@ class PondApiTests(APITestCase):
 
     def test_pond_list_requires_authentication(self):
         response = self.client.get('/api/ponds/')
-
         self.assertEqual(response.status_code, 401)
 
     def test_create_pond_assigns_current_user(self):
         self.authenticate()
-
         response = self.client.post('/api/ponds/', self.payload, format='json')
 
         self.assertEqual(response.status_code, 201)
@@ -99,14 +97,12 @@ class PondApiTests(APITestCase):
 
     def test_create_pond_rejects_invalid_measurements(self):
         self.authenticate()
-        payload = {
+        response = self.client.post('/api/ponds/', {
             **self.payload,
             'area_decimal': '0.00',
             'average_depth_ft': '-2.00',
             'stocking_capacity': 0,
-        }
-
-        response = self.client.post('/api/ponds/', payload, format='json')
+        }, format='json')
 
         self.assertEqual(response.status_code, 400)
         self.assertIn('area_decimal', response.data)
@@ -148,7 +144,6 @@ class PondApiTests(APITestCase):
         other_pond = self.create_pond(owner=self.other_user, name='Other Pond')
 
         response = self.client.get(f'/api/ponds/{other_pond.id}/')
-
         self.assertEqual(response.status_code, 404)
 
     def test_update_pond(self):
