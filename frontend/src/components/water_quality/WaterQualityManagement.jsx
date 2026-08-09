@@ -381,10 +381,10 @@ function AdviceBlock({ title, items }) {
   );
 }
 
-export default function WaterQualityManagement({ onNotificationChange }) {
+export default function WaterQualityManagement({ onNotificationChange, initialTab = 'Dashboard' }) {
   const [ponds, setPonds] = useState([]);
   const [selectedPondId, setSelectedPondId] = useState('');
-  const [activeTab, setActiveTab] = useState('Dashboard');
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [dashboard, setDashboard] = useState(null);
   const [dashboardLoading, setDashboardLoading] = useState(false);
   const [dashboardError, setDashboardError] = useState('');
