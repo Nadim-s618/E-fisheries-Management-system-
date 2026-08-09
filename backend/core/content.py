@@ -1,5 +1,5 @@
 HOMEPAGE_CONTENT = {
-    'navLinks': ['Features', 'Dashboard', 'About', 'Contact'],
+    'navLinks': ['Features', 'Fish Store', 'About', 'Contact'],
     'hero': {
         'eyebrow': 'E-Fisheries Management System',
         'title': 'Smarter aquaculture, pond to market.',
