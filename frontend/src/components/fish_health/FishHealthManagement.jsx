@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   createHealthRecord,
   createTreatmentPlan,
+  addTreatmentTrackingEntry,
   getDiseaseLibrary,
   getFishHealthAlerts,
   getFishHealthDashboard,
@@ -484,6 +485,17 @@ function TreatmentManager({ stocks, records, diseases, treatments, selectedPondI
   const [formData, setFormData] = useState(EMPTY_TREATMENT);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [trackingFor, setTrackingFor] = useState(null);
+  const [trackingForm, setTrackingForm] = useState({
+    status: 'Active',
+    administered_dosage: '',
+    quantity_used: '',
+    notes: '',
+    follow_up_date: '',
+    follow_up_notes: '',
+  });
+  const [trackingSaving, setTrackingSaving] = useState(false);
+  const [trackingError, setTrackingError] = useState('');
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -516,6 +528,44 @@ function TreatmentManager({ stocks, records, diseases, treatments, selectedPondI
       setError(err.message);
     } finally {
       setSaving(false);
+    }
+  }
+
+  function openTracking(treatment) {
+    setTrackingFor(treatment.id);
+    setTrackingError('');
+    setTrackingForm({
+      status: treatment.status === 'Planned' ? 'Active' : treatment.status,
+      administered_dosage: treatment.dosage || '',
+      quantity_used: '',
+      notes: '',
+      follow_up_date: '',
+      follow_up_notes: '',
+    });
+  }
+
+  function handleTrackingChange(event) {
+    const { name, value } = event.target;
+    setTrackingForm(current => ({ ...current, [name]: value }));
+  }
+
+  async function handleTrackingSubmit(event, treatmentId) {
+    event.preventDefault();
+    setTrackingSaving(true);
+    setTrackingError('');
+
+    try {
+      await addTreatmentTrackingEntry(treatmentId, {
+        ...trackingForm,
+        quantity_used: trackingForm.quantity_used ? Number(trackingForm.quantity_used) : null,
+        follow_up_date: trackingForm.follow_up_date || null,
+      });
+      setTrackingFor(null);
+      onSaved?.();
+    } catch (err) {
+      setTrackingError(err.message);
+    } finally {
+      setTrackingSaving(false);
     }
   }
 
@@ -612,6 +662,36 @@ function TreatmentManager({ stocks, records, diseases, treatments, selectedPondI
                 </div>
                 <p>{treatment.dosage}</p>
                 <small>{formatShortDate(treatment.start_date)} to {formatShortDate(treatment.end_date)} · Cost {treatment.cost}</small>
+                <div className="fhm-treatment-tracking">
+                  <div className="fhm-card-top">
+                    <strong>Tracking history</strong>
+                    <button type="button" className="fhm-btn fhm-btn-secondary" onClick={() => openTracking(treatment)}>
+                      Add update
+                    </button>
+                  </div>
+                  {(treatment.tracking || []).map(entry => (
+                    <div key={entry.id} className="fhm-tracking-entry">
+                      <div><StatusPill value={entry.status} /><small>{formatDate(entry.created_at)}</small></div>
+                      {entry.administered_dosage && <span>Dosage: {entry.administered_dosage}</span>}
+                      {entry.quantity_used && <span>Used: {entry.quantity_used}</span>}
+                      {entry.notes && <span>{entry.notes}</span>}
+                      {entry.follow_up_date && <span>Follow-up: {formatShortDate(entry.follow_up_date)}</span>}
+                      {entry.follow_up_notes && <span>{entry.follow_up_notes}</span>}
+                    </div>
+                  ))}
+                  {trackingFor === treatment.id && (
+                    <form className="fhm-tracking-form" onSubmit={event => handleTrackingSubmit(event, treatment.id)}>
+                      <label className="fhm-field"><span>Status</span><select name="status" value={trackingForm.status} onChange={handleTrackingChange}>{['Planned', 'Active', 'Completed', 'Cancelled'].map(item => <option key={item} value={item}>{item}</option>)}</select></label>
+                      <label className="fhm-field"><span>Actual dosage</span><input name="administered_dosage" value={trackingForm.administered_dosage} onChange={handleTrackingChange} /></label>
+                      <label className="fhm-field"><span>Quantity used</span><input name="quantity_used" type="number" min="0" step="0.01" value={trackingForm.quantity_used} onChange={handleTrackingChange} /></label>
+                      <label className="fhm-field"><span>Follow-up date</span><input name="follow_up_date" type="date" value={trackingForm.follow_up_date} onChange={handleTrackingChange} /></label>
+                      <label className="fhm-field"><span>Notes</span><textarea name="notes" rows="2" value={trackingForm.notes} onChange={handleTrackingChange} /></label>
+                      <label className="fhm-field"><span>Follow-up notes</span><textarea name="follow_up_notes" rows="2" value={trackingForm.follow_up_notes} onChange={handleTrackingChange} /></label>
+                      {trackingError && <PanelState type="error">{trackingError}</PanelState>}
+                      <div className="fhm-actions"><button type="button" className="fhm-btn fhm-btn-secondary" onClick={() => setTrackingFor(null)}>Cancel</button><button type="submit" className="fhm-btn fhm-btn-primary" disabled={trackingSaving}>{trackingSaving ? 'Saving...' : 'Save update'}</button></div>
+                    </form>
+                  )}
+                </div>
               </article>
             ))}
           </div>

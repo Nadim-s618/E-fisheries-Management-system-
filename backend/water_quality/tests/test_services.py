@@ -27,6 +27,7 @@ class WaterQualityAdvisorUnitTests(SimpleTestCase):
         self.assertEqual(advice['source'], 'fallback')
         self.assertFalse(advice['ai_enabled'])
         self.assertEqual(advice['emergency_actions'], [])
+        self.assertEqual(advice['danger_parameter_solutions'], [])
 
     def test_fallback_advice_adds_emergency_actions_for_danger(self):
         analysis = {
@@ -38,6 +39,8 @@ class WaterQualityAdvisorUnitTests(SimpleTestCase):
 
         self.assertIn('ammonia', advice['explanation'])
         self.assertTrue(advice['emergency_actions'])
+        self.assertEqual(advice['danger_parameter_solutions'][0]['parameter'], 'ammonia')
+        self.assertTrue(advice['danger_parameter_solutions'][0]['suggestions'])
 
     def test_normalize_list_keeps_clean_values(self):
         self.assertEqual(
@@ -58,11 +61,31 @@ class WaterQualityAdvisorUnitTests(SimpleTestCase):
             'recommendations': ['Check oxygen'],
             'preventive_actions': ['Test daily'],
             'emergency_actions': [],
+            'danger_parameter_solutions': [],
         }, fallback)
 
         self.assertEqual(advice['source'], 'gemini')
         self.assertTrue(advice['ai_enabled'])
         self.assertEqual(advice['recommendations'], ['Check oxygen'])
+
+    def test_normalize_ai_advice_keeps_only_known_danger_solutions(self):
+        fallback = get_fallback_advice({
+            'overall_status': STATUS_DANGER,
+            'parameters': [{'parameter': 'ammonia', 'value': 0.08, 'normal_range': '0-0.02 mg/L', 'status': STATUS_DANGER}],
+        })
+
+        advice = normalize_ai_advice({
+            'danger_parameter_solutions': [
+                {'parameter': 'ammonia', 'problem': 'Ammonia is unsafe.', 'suggestions': ['Aerate now.']},
+                {'parameter': 'temperature', 'problem': 'Ignore this.', 'suggestions': ['Ignore this.']},
+            ],
+        }, fallback)
+
+        self.assertEqual(advice['danger_parameter_solutions'], [{
+            'parameter': 'ammonia',
+            'problem': 'Ammonia is unsafe.',
+            'suggestions': ['Aerate now.'],
+        }])
 
     def test_prompt_contains_analysis_and_context(self):
         prompt = build_water_quality_prompt(
