@@ -368,14 +368,156 @@
   letter-spacing: 0.08em;
 }
 
-.fs-tracking-result > div {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem 1rem;
-  margin-top: 0.55rem;
+.fs-tracking-orders {
+  display: grid;
+  gap: 0.9rem;
+  margin-top: 0.75rem;
 }
 
-.fs-tracking-result b { color: var(--teal-mid); }
+.fs-order-route {
+  padding: 0.85rem 0.9rem;
+  background: var(--ice);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.fs-order-route-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: var(--ink);
+}
+
+.fs-order-route-header span {
+  color: var(--teal-mid);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.fs-route-steps {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.35rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fs-route-steps li {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+  flex: 1;
+  color: var(--ink-soft);
+  font-size: 0.68rem;
+  text-align: center;
+}
+
+.fs-route-steps li:not(:last-child)::after {
+  position: absolute;
+  top: 0.7rem;
+  left: calc(50% + 0.75rem);
+  width: calc(100% - 1.5rem);
+  height: 2px;
+  background: var(--line);
+  content: '';
+}
+
+.fs-route-steps li.is-complete,
+.fs-route-steps li.is-current {
+  color: var(--teal-ink);
+  font-weight: 700;
+}
+
+.fs-route-steps li.is-complete::after {
+  background: var(--teal-mid);
+}
+
+.fs-route-dot {
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 1.45rem;
+  height: 1.45rem;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+  background: var(--foam);
+  color: var(--ink-soft);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.fs-route-steps .is-complete .fs-route-dot,
+.fs-route-steps .is-current .fs-route-dot {
+  border-color: var(--teal-mid);
+  background: var(--teal-mid);
+  color: white;
+}
+
+.fs-route-terminal {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: 0.8rem;
+  color: var(--coral-dark);
+  font-weight: 700;
+}
+
+.fs-route-terminal .fs-route-dot {
+  border-color: var(--coral-dark);
+  background: #fdeceb;
+  color: var(--coral-dark);
+}
+
+.fs-receipt {
+  max-width: 760px;
+  margin: 1.5rem auto 2rem;
+  padding: 1.5rem;
+  background: var(--foam);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 16px 34px -24px rgba(11, 46, 44, 0.45);
+}
+
+.fs-receipt-header,
+.fs-receipt-code,
+.fs-receipt-total,
+.fs-receipt-item,
+.fs-receipt-buyer {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.fs-receipt-header { align-items: flex-start; border-bottom: 1px dashed var(--line); padding-bottom: 1rem; }
+.fs-receipt-header h2 { margin: 0.2rem 0 0; color: var(--ink); }
+.fs-receipt-print { border: 1px solid var(--line); border-radius: 8px; padding: 0.55rem 0.8rem; background: var(--ice); color: var(--ink); font-weight: 700; cursor: pointer; }
+.fs-receipt-code { align-items: center; margin: 1rem 0; padding: 0.8rem; border-radius: 8px; background: var(--teal-tint); }
+.fs-receipt-code span,
+.fs-receipt-buyer span,
+.fs-receipt-item span { display: block; color: var(--ink-soft); font-size: 0.78rem; }
+.fs-receipt-code strong { color: var(--teal-ink); font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.08em; }
+.fs-receipt-buyer { flex-wrap: wrap; padding-bottom: 1rem; border-bottom: 1px dashed var(--line); }
+.fs-receipt-buyer div { flex: 1 1 210px; }
+.fs-receipt-buyer strong { display: block; margin-top: 0.2rem; color: var(--ink); font-size: 0.88rem; overflow-wrap: anywhere; }
+.fs-receipt-items { display: grid; gap: 0.75rem; padding: 1rem 0; }
+.fs-receipt-item { align-items: center; padding-bottom: 0.75rem; border-bottom: 1px solid var(--line); }
+.fs-receipt-item > div:last-child { text-align: right; }
+.fs-receipt-item strong { color: var(--ink); }
+.fs-receipt-total { align-items: center; padding-top: 0.9rem; font-size: 1.1rem; color: var(--ink); }
+.fs-receipt-total strong { color: var(--coral-dark); }
+.fs-receipt-footnote,
+.fs-receipt-date { display: block; margin: 1rem 0 0; color: var(--ink-soft); font-size: 0.78rem; }
+
+@media print {
+  body * { visibility: hidden; }
+  .fs-receipt,
+  .fs-receipt * { visibility: visible; }
+  .fs-receipt { position: absolute; inset: 0; max-width: none; margin: 0; box-shadow: none; }
+  .fs-receipt-print { display: none; }
+}
 
 .fs-state {
   text-align: center;
@@ -827,6 +969,16 @@
 
   .fs-tracking-form .fs-submit-button {
     width: 100%;
+  }
+
+  .fs-order-route-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .fs-route-steps li {
+    font-size: 0.6rem;
   }
 }
 

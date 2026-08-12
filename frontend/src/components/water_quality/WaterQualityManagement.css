@@ -459,6 +459,60 @@
 
 /* ---------- AI advisor ---------- */
 
+.wqm-danger-solutions {
+  margin: 0 0 20px;
+  padding: 18px;
+  border: 1px solid #fecaca;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #fff7f7 0%, #fff 100%);
+}
+
+.wqm-danger-solutions-heading span {
+  color: var(--wqm-danger);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.wqm-danger-solutions-heading h3 {
+  margin: 4px 0 6px;
+  color: #991b1b;
+  font-size: 18px;
+}
+
+.wqm-danger-solutions-heading p,
+.wqm-danger-solution-card p {
+  margin: 0;
+  color: var(--wqm-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.wqm-danger-solution-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.wqm-danger-solution-card {
+  padding: 14px;
+  border: 1px solid #fecaca;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.wqm-danger-solution-card ul {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 12px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .wqm-advice-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
