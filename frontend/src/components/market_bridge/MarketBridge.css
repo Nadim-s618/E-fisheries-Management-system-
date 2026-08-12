@@ -223,6 +223,16 @@
   transform: translateY(0);
 }
 
+.mb-btn-danger {
+  background: var(--mb-danger-tint);
+  color: var(--mb-danger);
+}
+
+.mb-btn-danger:hover:not(:disabled) {
+  background: #f8dada;
+  transform: translateY(-1px);
+}
+
 .mb-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
@@ -536,8 +546,36 @@
   gap: 10px;
 }
 
+.mb-listing-view-toggle {
+  display: inline-flex;
+  gap: 4px;
+  margin: 12px 0;
+  padding: 4px;
+  border: 1px solid var(--mb-border);
+  border-radius: 999px;
+  background: var(--mb-bg-tint);
+}
+
+.mb-listing-view-toggle button {
+  border: 0;
+  border-radius: 999px;
+  padding: 7px 12px;
+  background: transparent;
+  color: var(--mb-muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mb-listing-view-toggle button.active {
+  background: var(--mb-teal-dark);
+  color: #fff;
+}
+
 .mb-mini-list article {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
@@ -564,6 +602,30 @@
 .mb-mini-list span {
   font-size: 12px;
   color: var(--mb-muted);
+}
+
+.mb-listing-summary {
+  min-width: 0;
+  flex: 1;
+}
+
+.mb-listing-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mb-listing-controls .mb-btn {
+  padding: 7px 12px;
+  font-size: 12px;
+}
+
+.mb-listing-edit {
+  flex-basis: 100%;
+  display: grid;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--mb-border);
 }
 
 /* ---------- Orders ---------- */
@@ -654,6 +716,48 @@
 .mb-order-actions .mb-btn {
   padding: 7px 16px;
   font-size: 12px;
+}
+
+.mb-buyer-details {
+  grid-column: 1 / -1;
+  padding: 14px 16px;
+  border-top: 1px solid var(--mb-border);
+  background: var(--mb-bg-tint);
+  border-radius: 12px;
+}
+
+.mb-buyer-details-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.mb-buyer-details dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 18px;
+  margin: 0;
+}
+
+.mb-buyer-details dl div {
+  min-width: 0;
+}
+
+.mb-buyer-details dt {
+  color: var(--mb-muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.mb-buyer-details dd {
+  margin: 3px 0 0;
+  color: var(--mb-ink);
+  font-size: 13px;
+  font-weight: 650;
+  overflow-wrap: anywhere;
 }
 
 /* ---------- Modal ---------- */
@@ -756,6 +860,10 @@
     margin-left: 0;
     justify-content: space-between;
     flex-wrap: wrap;
+  }
+
+  .mb-buyer-details dl {
+    grid-template-columns: 1fr;
   }
 }
 
