@@ -107,17 +107,8 @@ export default function HomePage() {
         </div>
 
         <Link to="/fish-store" className="hero-store-link">
-          <span className="hero-store-icon" aria-hidden="true">
-            <svg viewBox="0 0 32 32" fill="none">
-              <path d="M5 8h3l2 14h12l3-10H9" />
-              <circle cx="13" cy="27" r="1.5" />
-              <circle cx="23" cy="27" r="1.5" />
-              <path d="M21 4v6M18 7h6" />
-            </svg>
-          </span>
-          <span>
-            <strong>Fish Store</strong>
-            <small>Fresh fish from Mashrafee →</small>
+          <span className="hero-store-image">
+            <img src="/store.webp" alt="Fresh fish from the E-Fisheries store" />
           </span>
         </Link>
 

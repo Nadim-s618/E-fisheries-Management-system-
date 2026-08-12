@@ -13,6 +13,87 @@ const emptyOrderForm = {
   buyer_note: '',
 };
 
+function receiptMoney(value) {
+  return `BDT ${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function receiptNumber(value) {
+  return `${Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })} kg`;
+}
+
+const trackingSteps = [
+  { status: 'pending', label: 'Order placed' },
+  { status: 'accepted', label: 'Accepted' },
+  { status: 'shipped', label: 'Shipped' },
+  { status: 'out_for_delivery', label: 'Out for delivery' },
+  { status: 'completed', label: 'Completed' },
+];
+
+function OrderRoute({ order }) {
+  const terminalStatus = order.status === 'cancelled' || order.status === 'rejected';
+  const foundIndex = trackingSteps.findIndex(step => step.status === order.status);
+  const currentIndex = foundIndex >= 0 ? foundIndex : 0;
+
+  return (
+    <div className="fs-order-route" aria-label={`Order route: ${order.status_display}`}>
+      <div className="fs-order-route-header">
+        <strong>{order.listing_title}</strong>
+        <span>{order.listing_species || 'Fish'} · {order.status_display}</span>
+      </div>
+      {terminalStatus ? (
+        <div className="fs-route-terminal">
+          <span className="fs-route-dot" aria-hidden="true">!</span>
+          <span>This order was {order.status_display.toLowerCase()}.</span>
+        </div>
+      ) : (
+        <ol className="fs-route-steps">
+          {trackingSteps.map((step, index) => (
+            <li
+              key={step.status}
+              className={index < currentIndex ? 'is-complete' : index === currentIndex ? 'is-current' : ''}
+            >
+              <span className="fs-route-dot" aria-hidden="true">{index < currentIndex ? '✓' : index + 1}</span>
+              <span>{step.label}</span>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  );
+}
+
+function Receipt({ receipt }) {
+  const total = receipt.orders.reduce((sum, order) => sum + Number(order.total_price || 0), 0);
+  const firstOrder = receipt.orders[0] || {};
+
+  return (
+    <section className="fs-receipt" aria-labelledby="receipt-title">
+      <div className="fs-receipt-header">
+        <div><span className="fs-eyebrow fs-eyebrow-small">Order receipt</span><h2 id="receipt-title">Fish Store Receipt</h2></div>
+        <button type="button" className="fs-receipt-print" onClick={() => window.print()}>Print receipt</button>
+      </div>
+      <div className="fs-receipt-code"><span>Tracking code</span><strong>{receipt.transaction_code}</strong></div>
+      <div className="fs-receipt-buyer">
+        <div><span>Buyer</span><strong>{receipt.buyer_full_name}</strong></div>
+        <div><span>Phone</span><strong>{receipt.buyer_contact_number}</strong></div>
+        <div><span>Address</span><strong>{receipt.buyer_address}</strong></div>
+        {receipt.buyer_note && <div><span>Note</span><strong>{receipt.buyer_note}</strong></div>}
+      </div>
+      <div className="fs-receipt-items">
+        {receipt.orders.map(order => (
+          <div className="fs-receipt-item" key={`${order.id || order.transaction_code}-${order.listing_title}`}>
+            <div><strong>{order.listing_title}</strong><span>{order.listing_species || 'Fish'} · {order.status_display || 'Pending'}</span></div>
+            <div><span>{receiptNumber(order.quantity_kg)} × {receiptMoney(order.unit_price)}</span><strong>{receiptMoney(order.total_price)}</strong></div>
+          </div>
+        ))}
+      </div>
+      <div className="fs-receipt-total"><span>Total</span><strong>{receiptMoney(total)}</strong></div>
+      <p className="fs-receipt-footnote">Use the tracking code to check your order status. Keep this receipt for your records.</p>
+      {firstOrder.created_at && <small className="fs-receipt-date">Ordered {new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(firstOrder.created_at))}</small>}
+    </section>
+  );
+}
+
 export default function FishStorePage() {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,6 +109,7 @@ export default function FishStorePage() {
   const [message, setMessage] = useState('');
   const [trackingCode, setTrackingCode] = useState('');
   const [trackingResult, setTrackingResult] = useState(null);
+  const [receipt, setReceipt] = useState(null);
   const [trackingLoading, setTrackingLoading] = useState(false);
 
   useEffect(() => {
@@ -119,12 +201,14 @@ export default function FishStorePage() {
         buyer_contact_number: orderForm.buyer_contact_number,
         buyer_note: orderForm.buyer_note,
       });
+      const receiptBuyer = { ...orderForm };
       setCart([]);
       setCartOpen(false);
       setOrderForm(emptyOrderForm);
       const transactionCode = createdOrders?.[0]?.transaction_code;
       setTrackingCode(transactionCode || '');
       setTrackingResult(transactionCode ? { transaction_code: transactionCode, orders: createdOrders } : null);
+      setReceipt(transactionCode ? { transaction_code: transactionCode, orders: createdOrders, ...receiptBuyer } : null);
       setMessage(transactionCode
         ? `Order placed. Your transaction code is ${transactionCode}.`
         : 'Your cart order has been sent to Mashrafee.');
@@ -228,16 +312,16 @@ export default function FishStorePage() {
             {trackingResult && (
               <div className="fs-tracking-result" role="status">
                 <strong>{trackingResult.transaction_code}</strong>
-                <div>
+                <div className="fs-tracking-orders">
                   {trackingResult.orders.map(order => (
-                    <span key={`${order.transaction_code}-${order.listing_title}`}>
-                      {order.listing_title}: <b>{order.status_display}</b>
-                    </span>
+                    <OrderRoute key={`${order.transaction_code}-${order.listing_title}`} order={order} />
                   ))}
                 </div>
               </div>
             )}
           </section>
+
+          {receipt && <Receipt receipt={receipt} />}
 
           {loading ? (
             <div className="fs-state">
