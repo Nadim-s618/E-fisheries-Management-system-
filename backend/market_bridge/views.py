@@ -3,6 +3,7 @@ from decimal import Decimal
 from django.db import transaction
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -140,6 +141,9 @@ class MarketListingViewSet(viewsets.ModelViewSet):
         if self.request.user.is_staff:
             return queryset
 
+        if self.action in {'retrieve', 'update', 'partial_update', 'destroy'}:
+            return queryset.filter(seller=self.request.user)
+
         return queryset.filter(status=MarketListing.Status.ACTIVE)
 
     def perform_update(self, serializer):
@@ -270,4 +274,22 @@ class MarketOrderViewSet(viewsets.ModelViewSet):
         order.status = next_status
         order.seller_note = seller_note
         order.save(update_fields=['status', 'seller_note', 'updated_at'])
+
+        if next_status == MarketOrder.Status.COMPLETED:
+            from financials.services import create_automatic_financial_record
+
+            create_automatic_financial_record(order.listing.seller, {
+                'source_type': 'harvest_sale',
+                'source_id': order.id,
+                'pond': order.listing.fish_stock.pond_id if order.listing.fish_stock_id else None,
+                'fish_stock': order.listing.fish_stock_id,
+                'title': f'Store sale: {order.listing.title}',
+                'quantity': order.quantity_kg,
+                'unit': 'kg',
+                'unit_price': order.unit_price,
+                'amount': order.total_price,
+                'transaction_date': timezone.localdate(),
+                'reference': order.transaction_code,
+            })
+
         return Response(self.get_serializer(order).data, status=status.HTTP_200_OK)

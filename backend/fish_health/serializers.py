@@ -5,7 +5,7 @@ from core.serializers import NotificationSerializer
 from ponds.models import Pond
 from stocks.models import FishStock
 
-from .models import DiseaseProfile, HealthRecord, TreatmentPlan
+from .models import DiseaseProfile, HealthRecord, TreatmentPlan, TreatmentTrackingEntry
 from .services.core.diagnosis import diagnose_health_record
 from .services.water_quality.context import get_latest_water_quality_snapshot
 from .services.weather.context import get_latest_weather_snapshot
@@ -136,6 +136,7 @@ class TreatmentPlanSerializer(serializers.ModelSerializer):
     pond_name = serializers.CharField(source='pond.name', read_only=True)
     fish_stock_name = serializers.CharField(source='fish_stock.batch_name', read_only=True)
     disease_name = serializers.CharField(source='disease.name', read_only=True)
+    tracking = serializers.SerializerMethodField()
 
     class Meta:
         model = TreatmentPlan
@@ -156,10 +157,17 @@ class TreatmentPlanSerializer(serializers.ModelSerializer):
             'instructions',
             'status',
             'outcome_notes',
+            'tracking',
             'created_at',
             'updated_at',
         )
         read_only_fields = ('id', 'pond_name', 'fish_stock_name', 'disease_name', 'created_at', 'updated_at')
+
+    def get_tracking(self, treatment):
+        return TreatmentTrackingSerializer(
+            treatment.tracking_entries.select_related('recorded_by').all(),
+            many=True,
+        ).data
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -191,6 +199,26 @@ class TreatmentPlanSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data['created_by'] = self.context['request'].user
         return super().create(validated_data)
+
+
+class TreatmentTrackingSerializer(serializers.ModelSerializer):
+    recorded_by_name = serializers.CharField(source='recorded_by.get_full_name', read_only=True)
+
+    class Meta:
+        model = TreatmentTrackingEntry
+        fields = (
+            'id',
+            'treatment',
+            'status',
+            'administered_dosage',
+            'quantity_used',
+            'notes',
+            'follow_up_date',
+            'follow_up_notes',
+            'recorded_by_name',
+            'created_at',
+        )
+        read_only_fields = ('id', 'treatment', 'recorded_by_name', 'created_at')
 
 
 class HealthAlertSerializer(NotificationSerializer):

@@ -1,4 +1,6 @@
+from django.db import transaction
 from django.db.models import Count
+from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -9,12 +11,13 @@ from rest_framework.views import APIView
 from core.models import Notification
 from ponds.models import Pond
 
-from .models import DiseaseProfile, HealthRecord, TreatmentPlan
+from .models import DiseaseProfile, HealthRecord, TreatmentPlan, TreatmentTrackingEntry
 from .serializers import (
     DiseaseProfileSerializer,
     HealthAlertSerializer,
     HealthRecordSerializer,
     TreatmentPlanSerializer,
+    TreatmentTrackingSerializer,
 )
 from .services.core.alerts import create_health_notifications
 from .services.core.diagnosis import diagnose_health_record
@@ -115,6 +118,62 @@ class TreatmentPlanViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(status=status_filter)
 
         return queryset
+
+    def perform_create(self, serializer):
+        treatment = serializer.save()
+        TreatmentTrackingEntry.objects.create(
+            treatment=treatment,
+            status=treatment.status,
+            recorded_by=self.request.user,
+            notes='Treatment plan created.',
+        )
+        self._create_completed_treatment_expense(treatment)
+
+    def perform_update(self, serializer):
+        previous_status = serializer.instance.status
+        treatment = serializer.save()
+        if previous_status != treatment.status:
+            TreatmentTrackingEntry.objects.create(
+                treatment=treatment,
+                status=treatment.status,
+                recorded_by=self.request.user,
+                notes=f'Status changed from {previous_status} to {treatment.status}.',
+            )
+        self._create_completed_treatment_expense(treatment)
+
+    @action(detail=True, methods=['get', 'post'], url_path='tracking')
+    def tracking(self, request, pk=None):
+        treatment = self.get_object()
+        if request.method == 'GET':
+            entries = treatment.tracking_entries.select_related('recorded_by').all()
+            return Response(TreatmentTrackingSerializer(entries, many=True).data)
+
+        serializer = TreatmentTrackingSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        with transaction.atomic():
+            entry = serializer.save(treatment=treatment, recorded_by=request.user)
+            if treatment.status != entry.status:
+                treatment.status = entry.status
+                treatment.save(update_fields=['status', 'updated_at'])
+            self._create_completed_treatment_expense(treatment)
+        return Response(TreatmentTrackingSerializer(entry).data, status=status.HTTP_201_CREATED)
+
+    def _create_completed_treatment_expense(self, treatment):
+        if treatment.status != TreatmentPlan.Status.COMPLETED or treatment.cost <= 0:
+            return
+
+        from financials.services import create_automatic_financial_record
+
+        create_automatic_financial_record(treatment.pond.owner, {
+            'source_type': 'medicine_treatment',
+            'source_id': treatment.id,
+            'pond': treatment.pond_id,
+            'fish_stock': treatment.fish_stock_id,
+            'title': f'Treatment: {treatment.medicine_name}',
+            'amount': treatment.cost,
+            'transaction_date': treatment.end_date or timezone.localdate(),
+            'reference': f'Treatment plan #{treatment.id}',
+        })
 
 
 class HealthDashboardView(APIView):
