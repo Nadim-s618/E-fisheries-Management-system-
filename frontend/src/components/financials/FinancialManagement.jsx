@@ -1,12 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
-  createAutomaticFinancialRecord,
   createFinancialBudget,
   createFinancialTransaction,
-  estimateHarvestRevenue,
   getExpenseCategories,
-  getFeedCostAnalysis,
   getFinancialAnalytics,
   getFinancialBudgets,
   getFinancialDashboard,
@@ -25,20 +22,8 @@ const TABS = [
   'Automatic Records',
   'Profit & Loss',
   'Pond Performance',
-  'Feed Costs',
-  'Harvest Estimator',
   'Budgets',
   'Analytics',
-];
-
-const AUTO_SOURCES = [
-  { value: 'feed_purchase', label: 'Feed Purchase', type: 'expense', unit: 'kg' },
-  { value: 'fish_stocking', label: 'Fish Stocking', type: 'expense', unit: 'fish' },
-  { value: 'medicine_treatment', label: 'Medicine Treatment', type: 'expense', unit: '' },
-  { value: 'labor', label: 'Labor', type: 'expense', unit: 'day' },
-  { value: 'harvest_sale', label: 'Harvest Sale', type: 'income', unit: 'kg' },
-  { value: 'pond_maintenance', label: 'Pond Maintenance', type: 'expense', unit: '' },
-  { value: 'equipment_purchase', label: 'Equipment Purchase', type: 'expense', unit: '' },
 ];
 
 const EMPTY_TRANSACTION = {
@@ -52,19 +37,7 @@ const EMPTY_TRANSACTION = {
   quantity: '',
   unit: '',
   unit_price: '',
-  transaction_date: new Date().toISOString().slice(0, 10),
-  reference: '',
-};
-
-const EMPTY_AUTO = {
-  source_type: 'feed_purchase',
-  pond: '',
-  title: '',
-  description: '',
-  amount: '',
-  quantity: '',
-  unit: 'kg',
-  unit_price: '',
+  extra_amount: '',
   transaction_date: new Date().toISOString().slice(0, 10),
   reference: '',
 };
@@ -80,13 +53,6 @@ const EMPTY_BUDGET = {
   notes: '',
 };
 
-const EMPTY_ESTIMATE = {
-  pond: '',
-  estimated_weight_kg: '',
-  expected_price_per_kg: '',
-  estimated_harvest_cost: '',
-};
-
 function formatMoney(value) {
   const amount = Number(value || 0);
   return new Intl.NumberFormat(undefined, {
@@ -99,6 +65,16 @@ function formatMoney(value) {
 function formatNumber(value, suffix = '') {
   if (value === null || value === undefined || value === '') return '0';
   return `${Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 })}${suffix}`;
+}
+
+function calculatedAmount(quantity, unitPrice, extraAmount = 0) {
+  const quantityValue = Number(quantity);
+  const unitPriceValue = Number(unitPrice);
+  const extraValue = Number(extraAmount || 0);
+  if (!quantity || !unitPrice || !Number.isFinite(quantityValue) || !Number.isFinite(unitPriceValue) || !Number.isFinite(extraValue)) {
+    return '';
+  }
+  return (quantityValue * unitPriceValue + extraValue).toFixed(2);
 }
 
 function formatDate(value) {
@@ -212,7 +188,14 @@ function TransactionForm({ type, ponds, expenseCategories, incomeCategories, onS
 
   function handleChange(event) {
     const { name, value } = event.target;
-    setFormData(current => ({ ...current, [name]: value }));
+    setFormData(current => {
+      const next = { ...current, [name]: value };
+      if (name === 'quantity' || name === 'unit_price' || name === 'extra_amount') {
+        const total = calculatedAmount(next.quantity, next.unit_price, next.extra_amount);
+        if (total) next.amount = total;
+      }
+      return next;
+    });
   }
 
   async function handleSubmit(event) {
@@ -228,7 +211,8 @@ function TransactionForm({ type, ponds, expenseCategories, incomeCategories, onS
         income_category: type === 'income' ? Number(formData.income_category) : null,
         title: formData.title,
         description: formData.description,
-        amount: Number(formData.amount),
+        amount: Number(calculatedAmount(formData.quantity, formData.unit_price, formData.extra_amount) || formData.extra_amount),
+        extra_amount: formData.extra_amount ? Number(formData.extra_amount) : null,
         quantity: formData.quantity ? Number(formData.quantity) : null,
         unit: formData.unit,
         unit_price: formData.unit_price ? Number(formData.unit_price) : null,
@@ -279,10 +263,6 @@ function TransactionForm({ type, ponds, expenseCategories, incomeCategories, onS
           <input name="title" value={formData.title} onChange={handleChange} required />
         </label>
         <label className="fm-field">
-          <span>Amount</span>
-          <input name="amount" type="number" min="0" step="0.01" value={formData.amount} onChange={handleChange} required />
-        </label>
-        <label className="fm-field">
           <span>Date</span>
           <input name="transaction_date" type="date" value={formData.transaction_date} onChange={handleChange} required />
         </label>
@@ -297,6 +277,10 @@ function TransactionForm({ type, ponds, expenseCategories, incomeCategories, onS
         <label className="fm-field">
           <span>Unit Price</span>
           <input name="unit_price" type="number" min="0" step="0.01" value={formData.unit_price} onChange={handleChange} />
+        </label>
+        <label className="fm-field">
+          <span>{type === 'income' ? 'Extra Sale' : 'Extra Expense'}</span>
+          <input name="extra_amount" type="number" min="0" step="0.01" value={formData.extra_amount} onChange={handleChange} placeholder="Optional" />
         </label>
         <label className="fm-field">
           <span>Reference</span>
@@ -322,115 +306,25 @@ function TransactionForm({ type, ponds, expenseCategories, incomeCategories, onS
   );
 }
 
-function AutomaticRecordForm({ ponds, onSaved }) {
-  const [formData, setFormData] = useState(EMPTY_AUTO);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  const source = AUTO_SOURCES.find(item => item.value === formData.source_type) || AUTO_SOURCES[0];
-
-  function handleChange(event) {
-    const { name, value } = event.target;
-    setFormData(current => ({ ...current, [name]: value }));
-  }
-
-  function handleSourceChange(event) {
-    const nextSource = AUTO_SOURCES.find(item => item.value === event.target.value);
-    setFormData(current => ({
-      ...current,
-      source_type: event.target.value,
-      unit: nextSource?.unit || '',
-      title: '',
-    }));
-  }
-
-  async function handleSubmit(event) {
-    event.preventDefault();
-    setSaving(true);
-    setError('');
-
-    try {
-      await createAutomaticFinancialRecord({
-        ...formData,
-        pond: formData.pond ? Number(formData.pond) : null,
-        amount: Number(formData.amount),
-        quantity: formData.quantity ? Number(formData.quantity) : null,
-        unit_price: formData.unit_price ? Number(formData.unit_price) : null,
-      });
-      setFormData(EMPTY_AUTO);
-      onSaved?.();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
-    }
-  }
+function AutomaticRecordLists({ transactions, loading }) {
+  const automaticExpenses = transactions.filter(row => row.is_automatic && ['meal_feed', 'medicine_treatment'].includes(row.source_type));
+  const automaticIncome = transactions.filter(row => row.is_automatic && row.source_type === 'harvest_sale');
 
   return (
-    <form className="fm-panel fm-form" onSubmit={handleSubmit}>
-      <div className="fm-panel-header">
-        <div>
-          <span>Automatic Financial Records</span>
-          <h2>Create From Farm Event</h2>
+    <div className="fm-grid-two">
+      <section className="fm-panel">
+        <div className="fm-panel-header">
+          <div><span>Completed feeding and treatments</span><h2>Automatic Expenses</h2></div>
         </div>
-        <strong className={`fm-chip fm-chip-${source.type}`}>{source.type}</strong>
-      </div>
-
-      <div className="fm-form-grid">
-        <label className="fm-field">
-          <span>Event</span>
-          <select name="source_type" value={formData.source_type} onChange={handleSourceChange}>
-            {AUTO_SOURCES.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}
-          </select>
-        </label>
-        <label className="fm-field">
-          <span>Pond</span>
-          <select name="pond" value={formData.pond} onChange={handleChange}>
-            <option value="">All ponds</option>
-            {ponds.map(pond => <option key={pond.id} value={pond.id}>{pond.name}</option>)}
-          </select>
-        </label>
-        <label className="fm-field">
-          <span>Title</span>
-          <input name="title" value={formData.title} onChange={handleChange} placeholder={source.label} />
-        </label>
-        <label className="fm-field">
-          <span>Amount</span>
-          <input name="amount" type="number" min="0" step="0.01" value={formData.amount} onChange={handleChange} required />
-        </label>
-        <label className="fm-field">
-          <span>Quantity</span>
-          <input name="quantity" type="number" min="0" step="0.01" value={formData.quantity} onChange={handleChange} />
-        </label>
-        <label className="fm-field">
-          <span>Unit</span>
-          <input name="unit" value={formData.unit} onChange={handleChange} />
-        </label>
-        <label className="fm-field">
-          <span>Unit Price</span>
-          <input name="unit_price" type="number" min="0" step="0.01" value={formData.unit_price} onChange={handleChange} />
-        </label>
-        <label className="fm-field">
-          <span>Date</span>
-          <input name="transaction_date" type="date" value={formData.transaction_date} onChange={handleChange} required />
-        </label>
-        <label className="fm-field">
-          <span>Reference</span>
-          <input name="reference" value={formData.reference} onChange={handleChange} />
-        </label>
-        <label className="fm-field fm-field-wide">
-          <span>Description</span>
-          <textarea name="description" value={formData.description} onChange={handleChange} rows="3" />
-        </label>
-      </div>
-
-      {error && <PanelState type="error">{error}</PanelState>}
-
-      <div className="fm-actions">
-        <button type="submit" className="fm-btn fm-btn-primary" disabled={saving}>
-          {saving ? 'Creating...' : 'Create Automatic Record'}
-        </button>
-      </div>
-    </form>
+        <TransactionTable rows={automaticExpenses} loading={loading} error="" />
+      </section>
+      <section className="fm-panel">
+        <div className="fm-panel-header">
+          <div><span>Completed store sales</span><h2>Automatic Income</h2></div>
+        </div>
+        <TransactionTable rows={automaticIncome} loading={loading} error="" />
+      </section>
+    </div>
   );
 }
 
@@ -556,95 +450,29 @@ function BudgetList({ budgets }) {
   );
 }
 
-function HarvestEstimator({ ponds }) {
-  const [formData, setFormData] = useState(EMPTY_ESTIMATE);
-  const [result, setResult] = useState(null);
-  const [error, setError] = useState('');
-  const [saving, setSaving] = useState(false);
-
-  function handleChange(event) {
-    const { name, value } = event.target;
-    setFormData(current => ({ ...current, [name]: value }));
-  }
-
-  async function handleSubmit(event) {
-    event.preventDefault();
-    setSaving(true);
-    setError('');
-
-    try {
-      const data = await estimateHarvestRevenue({
-        pond: formData.pond ? Number(formData.pond) : null,
-        estimated_weight_kg: Number(formData.estimated_weight_kg),
-        expected_price_per_kg: Number(formData.expected_price_per_kg),
-        estimated_harvest_cost: Number(formData.estimated_harvest_cost || 0),
-      });
-      setResult(data);
-    } catch (err) {
-      setResult(null);
-      setError(err.message);
-    } finally {
-      setSaving(false);
-    }
-  }
+function BudgetWatch({ budgets, title = 'Budget Watch' }) {
+  if (!budgets.length) return null;
 
   return (
-    <div className="fm-grid-two">
-      <form className="fm-panel fm-form" onSubmit={handleSubmit}>
-        <div className="fm-panel-header">
-          <div>
-            <span>Harvest Revenue Estimator</span>
-            <h2>Estimate Sale Result</h2>
-          </div>
-        </div>
-        <div className="fm-form-grid fm-form-grid-compact">
-          <label className="fm-field">
-            <span>Pond</span>
-            <select name="pond" value={formData.pond} onChange={handleChange}>
-              <option value="">No pond cost history</option>
-              {ponds.map(pond => <option key={pond.id} value={pond.id}>{pond.name}</option>)}
-            </select>
-          </label>
-          <label className="fm-field">
-            <span>Weight kg</span>
-            <input name="estimated_weight_kg" type="number" min="0" step="0.01" value={formData.estimated_weight_kg} onChange={handleChange} required />
-          </label>
-          <label className="fm-field">
-            <span>Price per kg</span>
-            <input name="expected_price_per_kg" type="number" min="0" step="0.01" value={formData.expected_price_per_kg} onChange={handleChange} required />
-          </label>
-          <label className="fm-field">
-            <span>Harvest Cost</span>
-            <input name="estimated_harvest_cost" type="number" min="0" step="0.01" value={formData.estimated_harvest_cost} onChange={handleChange} />
-          </label>
-        </div>
-        {error && <PanelState type="error">{error}</PanelState>}
-        <div className="fm-actions">
-          <button type="submit" className="fm-btn fm-btn-primary" disabled={saving}>
-            {saving ? 'Estimating...' : 'Estimate Revenue'}
-          </button>
-        </div>
-      </form>
-
-      <section className="fm-panel">
-        <div className="fm-panel-header">
-          <div>
-            <span>Projection</span>
-            <h2>Expected Result</h2>
-          </div>
-        </div>
-        {!result ? (
-          <PanelState>Enter harvest values to calculate projected revenue and profit.</PanelState>
-        ) : (
-          <div className="fm-overview fm-overview-small">
-            <Metric label="Gross Revenue" value={formatMoney(result.gross_revenue)} tone="income" />
-            <Metric label="Pond Cost" value={formatMoney(result.historical_pond_cost)} tone="expense" />
-            <Metric label="Projected Profit" value={formatMoney(result.projected_profit)} tone={Number(result.projected_profit) >= 0 ? 'income' : 'expense'} />
-            <Metric label="Margin" value={`${formatNumber(result.projected_margin_percent)}%`} />
-          </div>
-        )}
-      </section>
-    </div>
+    <section className="fm-panel fm-budget-watch">
+      <div className="fm-panel-header"><div><span>Expense control</span><h2>{title}</h2></div></div>
+      <div className="fm-budget-watch-list">
+        {budgets.map(budget => {
+          const usedPercent = Number(budget.used_percent || 0);
+          const isOver = usedPercent > 100;
+          return (
+            <article key={budget.id} className={isOver ? 'fm-budget-watch-row is-over' : 'fm-budget-watch-row'}>
+              <div className="fm-budget-watch-heading">
+                <div><strong>{budget.name}</strong><small>{budget.pond_name || 'All ponds'} · {budget.expense_category_name || 'All categories'}</small></div>
+                <strong>{formatMoney(budget.remaining)} {isOver ? 'over' : 'remaining'}</strong>
+              </div>
+              <div className="fm-progress"><i style={{ width: `${Math.min(usedPercent, 100)}%` }} /></div>
+              <div className="fm-budget-watch-meta"><span>{formatMoney(budget.actual_spend)} used of {formatMoney(budget.amount)}</span><span className={isOver ? 'fm-negative' : ''}>{formatNumber(usedPercent)}% used</span></div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
@@ -659,7 +487,6 @@ export default function FinancialManagement() {
   const [budgets, setBudgets] = useState([]);
   const [profitLoss, setProfitLoss] = useState(null);
   const [pondPerformance, setPondPerformance] = useState([]);
-  const [feedAnalysis, setFeedAnalysis] = useState(null);
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -695,7 +522,6 @@ export default function FinancialManagement() {
         budgetRows,
         profitLossData,
         performanceData,
-        feedData,
         analyticsData,
       ] = await Promise.all([
         getFinancialDashboard(filters),
@@ -703,7 +529,6 @@ export default function FinancialManagement() {
         getFinancialBudgets({ active: 'true', ...filters }),
         getFinancialProfitLoss(filters),
         getPondFinancialPerformance(filters),
-        getFeedCostAnalysis(filters),
         getFinancialAnalytics(filters),
       ]);
 
@@ -712,7 +537,6 @@ export default function FinancialManagement() {
       setBudgets(budgetRows || []);
       setProfitLoss(profitLossData);
       setPondPerformance(performanceData?.ponds || []);
-      setFeedAnalysis(feedData);
       setAnalytics(analyticsData);
     } catch (err) {
       setError(err.message);
@@ -788,6 +612,8 @@ export default function FinancialManagement() {
             <Metric label="Over Budget" value={summary.over_budget_count || 0} tone="warning" />
           </div>
 
+          <BudgetWatch budgets={dashboard?.budget_alerts || []} title="Budget Alerts" />
+
           <div className="fm-grid-two">
             <section className="fm-panel">
               <div className="fm-panel-header"><div><span>Charts</span><h2>Monthly Trend</h2></div></div>
@@ -808,6 +634,7 @@ export default function FinancialManagement() {
 
       {activeTab === 'Expenses' && (
         <div className="fm-stack">
+          <BudgetWatch budgets={budgets} title="Expense Budgets" />
           <TransactionForm type="expense" ponds={ponds} expenseCategories={expenseCategories} incomeCategories={incomeCategories} onSaved={refresh} />
           <TransactionTable rows={visibleTransactions} loading={loading} error="" />
         </div>
@@ -821,27 +648,33 @@ export default function FinancialManagement() {
       )}
 
       {activeTab === 'Automatic Records' && (
-        <div className="fm-stack">
-          <AutomaticRecordForm ponds={ponds} onSaved={refresh} />
-          <TransactionTable rows={transactions.filter(row => row.is_automatic)} loading={loading} error="" />
-        </div>
+        <AutomaticRecordLists transactions={transactions} loading={loading} />
       )}
 
       {activeTab === 'Profit & Loss' && (
         <div className="fm-stack">
+          <BudgetWatch budgets={budgets} title="Budget vs Actual Expenses" />
           <div className="fm-overview">
             <Metric label="Total Income" value={formatMoney(profitLoss?.income)} tone="income" />
             <Metric label="Total Expenses" value={formatMoney(profitLoss?.expenses)} tone="expense" />
             <Metric label="Net Profit" value={formatMoney(profitLoss?.net_profit)} tone={Number(profitLoss?.net_profit || 0) >= 0 ? 'income' : 'expense'} />
             <Metric label="Margin" value={`${formatNumber(profitLoss?.profit_margin_percent)}%`} />
           </div>
-          <div className="fm-grid-two">
-            <section className="fm-panel">
-              <div className="fm-panel-header"><div><span>P&L</span><h2>Income Categories</h2></div></div>
+          <div className="fm-grid-two fm-pnl-sides">
+            <section className="fm-panel fm-pnl-income">
+              <div className="fm-panel-header"><div><span>Income side</span><h2>Income</h2></div><strong className="fm-positive">{formatMoney(profitLoss?.income)}</strong></div>
+              <div className="fm-overview fm-overview-small">
+                <Metric label="Manual Income" value={formatMoney(profitLoss?.income_manual)} tone="income" />
+                <Metric label="Automatic Income" value={formatMoney(profitLoss?.income_automatic)} tone="income" />
+              </div>
               <MiniBars rows={profitLoss?.income_breakdown || []} />
             </section>
-            <section className="fm-panel">
-              <div className="fm-panel-header"><div><span>P&L</span><h2>Expense Categories</h2></div></div>
+            <section className="fm-panel fm-pnl-expense">
+              <div className="fm-panel-header"><div><span>Expense side</span><h2>Expenses</h2></div><strong className="fm-negative">{formatMoney(profitLoss?.expenses)}</strong></div>
+              <div className="fm-overview fm-overview-small">
+                <Metric label="Manual Expenses" value={formatMoney(profitLoss?.expenses_manual)} tone="expense" />
+                <Metric label="Automatic Expenses" value={formatMoney(profitLoss?.expenses_automatic)} tone="expense" />
+              </div>
               <MiniBars rows={profitLoss?.expense_breakdown || []} />
             </section>
           </div>
@@ -861,8 +694,6 @@ export default function FinancialManagement() {
                 <dl>
                   <div><dt>Income</dt><dd>{formatMoney(row.income)}</dd></div>
                   <div><dt>Expenses</dt><dd>{formatMoney(row.expenses)}</dd></div>
-                  <div><dt>Feed Cost</dt><dd>{formatMoney(row.feed_cost)}</dd></div>
-                  <div><dt>Harvest</dt><dd>{formatMoney(row.harvest_revenue)}</dd></div>
                 </dl>
               </article>
             ))}
@@ -870,23 +701,6 @@ export default function FinancialManagement() {
           {!pondPerformance.length && <PanelState>No pond financial records yet.</PanelState>}
         </section>
       )}
-
-      {activeTab === 'Feed Costs' && (
-        <div className="fm-stack">
-          <div className="fm-overview fm-overview-small">
-            <Metric label="Feed Cost" value={formatMoney(feedAnalysis?.summary?.total_feed_cost)} tone="expense" />
-            <Metric label="Feed Quantity" value={formatNumber(feedAnalysis?.summary?.total_feed_quantity)} />
-            <Metric label="Avg Cost/Unit" value={formatMoney(feedAnalysis?.summary?.average_cost_per_unit)} />
-            <Metric label="Records" value={feedAnalysis?.summary?.record_count || 0} />
-          </div>
-          <section className="fm-panel">
-            <div className="fm-panel-header"><div><span>Feed Cost Analysis</span><h2>Pond Feed Costs</h2></div></div>
-            <MiniBars rows={feedAnalysis?.ponds || []} valueKey="total_cost" labelKey="pond_name" />
-          </section>
-        </div>
-      )}
-
-      {activeTab === 'Harvest Estimator' && <HarvestEstimator ponds={ponds} />}
 
       {activeTab === 'Budgets' && (
         <div className="fm-stack">

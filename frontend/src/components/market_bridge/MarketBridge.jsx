@@ -10,6 +10,7 @@ import {
   getMarketPriceRecommendation,
   getMarketProfile,
   getPondStocks,
+  updateMarketListing,
   getPonds,
   rejectMarketOrder,
   shipMarketOrder,
@@ -58,6 +59,7 @@ function StatePanel({ type = 'empty', children }) {
 
 function OrderRow({ order, currentUserId, onAction }) {
   const isSeller = order.seller === currentUserId;
+  const [showBuyerDetails, setShowBuyerDetails] = useState(false);
 
   return (
     <article className="mb-order-row">
@@ -75,12 +77,10 @@ function OrderRow({ order, currentUserId, onAction }) {
         <span>Buyer: {order.buyer_name}</span>
         <span>Seller: {order.seller_name}</span>
       </div>
-      <div className="mb-order-contact">
-        <span>{order.buyer_full_name}</span>
-        <span>{order.buyer_contact_number}</span>
-        <small>{order.buyer_address}</small>
-      </div>
       <div className="mb-order-actions">
+        <button type="button" className="mb-btn mb-btn-secondary" onClick={() => setShowBuyerDetails(current => !current)}>
+          {showBuyerDetails ? 'Hide buyer details' : 'View buyer details'}
+        </button>
         {isSeller && order.status === 'pending' && (
           <>
             <button type="button" className="mb-btn mb-btn-primary" onClick={() => onAction('accept', order.id)}>Accept</button>
@@ -97,6 +97,24 @@ function OrderRow({ order, currentUserId, onAction }) {
           <button type="button" className="mb-btn mb-btn-primary" onClick={() => onAction('complete', order.id)}>Complete</button>
         )}
       </div>
+      {showBuyerDetails && (
+        <div className="mb-buyer-details">
+          <div className="mb-buyer-details-header">
+            <strong>Buyer details</strong>
+            <StatusBadge status={order.status} />
+          </div>
+          <dl>
+            <div><dt>Account</dt><dd>{order.buyer_name}{order.buyer_username ? ` · @${order.buyer_username}` : ' · Guest buyer'}</dd></div>
+            {order.buyer_email && <div><dt>Email</dt><dd>{order.buyer_email}</dd></div>}
+            <div><dt>Full name</dt><dd>{order.buyer_full_name || '--'}</dd></div>
+            <div><dt>Phone</dt><dd>{order.buyer_contact_number || '--'}</dd></div>
+            <div><dt>Address</dt><dd>{order.buyer_address || '--'}</dd></div>
+            <div><dt>Buyer note</dt><dd>{order.buyer_note || 'No note'}</dd></div>
+            <div><dt>Order</dt><dd>{number(order.quantity_kg, ' kg')} · {money(order.unit_price)}/kg · {money(order.total_price)}</dd></div>
+            <div><dt>Transaction</dt><dd>{order.transaction_code || '--'}</dd></div>
+          </dl>
+        </div>
+      )}
     </article>
   );
 }
@@ -116,6 +134,9 @@ export default function MarketBridge() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [editingListingId, setEditingListingId] = useState(null);
+  const [listingEditForm, setListingEditForm] = useState(null);
+  const [listingView, setListingView] = useState('current');
 
   const canSell = profile?.can_sell ?? user?.market_profile?.can_sell ?? true;
 
@@ -271,6 +292,56 @@ export default function MarketBridge() {
       await actions[action](id);
       await reloadMarket();
       setMessage('Order updated.');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function startListingEdit(listing, relist = false) {
+    setEditingListingId(listing.id);
+    setListingEditForm({
+      quantity_kg: listing.quantity_kg,
+      available_quantity_kg: relist ? listing.quantity_kg : listing.available_quantity_kg,
+      unit_price: listing.unit_price,
+      status: relist || listing.status === 'sold_out' ? 'active' : listing.status,
+      description: listing.description || '',
+    });
+    setError('');
+  }
+
+  async function saveListingEdit(event, listingId) {
+    event.preventDefault();
+    setSaving(true);
+    setError('');
+    try {
+      await updateMarketListing(listingId, {
+        ...listingEditForm,
+        quantity_kg: Number(listingEditForm.quantity_kg),
+        available_quantity_kg: Number(listingEditForm.available_quantity_kg),
+        unit_price: Number(listingEditForm.unit_price),
+      });
+      setEditingListingId(null);
+      setListingEditForm(null);
+      await reloadMarket();
+      setMessage('Listing updated.');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function closeListing(listingId) {
+    setSaving(true);
+    setError('');
+    try {
+      await updateMarketListing(listingId, { status: 'closed' });
+      setEditingListingId(null);
+      setListingEditForm(null);
+      await reloadMarket();
+      setMessage('Listing closed.');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -438,17 +509,43 @@ export default function MarketBridge() {
               <span>My Listings</span>
               <h2>Seller store</h2>
             </div>
+            <div className="mb-listing-view-toggle" role="tablist" aria-label="Listing views">
+              <button type="button" className={listingView === 'current' ? 'active' : ''} onClick={() => setListingView('current')}>Current listings</button>
+              <button type="button" className={listingView === 'history' ? 'active' : ''} onClick={() => setListingView('history')}>Listing history</button>
+            </div>
             <div className="mb-mini-list">
-              {myListings.length ? myListings.map(listing => (
+              {myListings.filter(listing => listingView === 'history' ? ['closed', 'sold_out'].includes(listing.status) : !['closed', 'sold_out'].includes(listing.status)).length ? myListings.filter(listing => listingView === 'history' ? ['closed', 'sold_out'].includes(listing.status) : !['closed', 'sold_out'].includes(listing.status)).map(listing => (
                 <article key={listing.id}>
-                  <div>
+                  <div className="mb-listing-summary">
                     <strong>{listing.title}</strong>
                     <span>{number(listing.available_quantity_kg, ' kg')} at {money(listing.unit_price)}</span>
                   </div>
                   <StatusBadge status={listing.status} />
+                  <div className="mb-listing-controls">
+                    {listingView === 'history' ? (
+                      <button type="button" className="mb-btn mb-btn-primary" onClick={() => startListingEdit(listing, true)}>Relist</button>
+                    ) : (
+                      <>
+                        <button type="button" className="mb-btn mb-btn-secondary" onClick={() => startListingEdit(listing)}>Edit</button>
+                        {listing.status !== 'closed' && <button type="button" className="mb-btn mb-btn-danger" onClick={() => closeListing(listing.id)} disabled={saving}>Close</button>}
+                      </>
+                    )}
+                  </div>
+                  {editingListingId === listing.id && listingEditForm && (
+                    <form className="mb-listing-edit" onSubmit={event => saveListingEdit(event, listing.id)}>
+                      <div className="mb-grid-two">
+                        <label className="mb-field"><span>Listed stock (kg)</span><input type="number" min="0.01" step="0.01" value={listingEditForm.quantity_kg} onChange={event => setListingEditForm(current => ({ ...current, quantity_kg: event.target.value }))} required /></label>
+                        <label className="mb-field"><span>Available stock (kg)</span><input type="number" min="0" step="0.01" value={listingEditForm.available_quantity_kg} onChange={event => setListingEditForm(current => ({ ...current, available_quantity_kg: event.target.value }))} required /></label>
+                        <label className="mb-field"><span>Price per kg</span><input type="number" min="0.01" step="0.01" value={listingEditForm.unit_price} onChange={event => setListingEditForm(current => ({ ...current, unit_price: event.target.value }))} required /></label>
+                        <label className="mb-field"><span>Status</span><select value={listingEditForm.status} onChange={event => setListingEditForm(current => ({ ...current, status: event.target.value }))}><option value="active">Active</option><option value="paused">Paused</option><option value="closed">Closed</option></select></label>
+                      </div>
+                      <label className="mb-field"><span>Description</span><textarea rows="2" value={listingEditForm.description} onChange={event => setListingEditForm(current => ({ ...current, description: event.target.value }))} /></label>
+                      <div className="mb-modal-actions"><button type="button" className="mb-btn mb-btn-secondary" onClick={() => setEditingListingId(null)}>Cancel</button><button type="submit" className="mb-btn mb-btn-primary" disabled={saving}>{saving ? 'Saving...' : 'Save changes'}</button></div>
+                    </form>
+                  )}
                 </article>
               )) : (
-                <StatePanel>No seller listings yet.</StatePanel>
+                <StatePanel>{listingView === 'history' ? 'No closed or sold-out listings yet.' : 'No current listings yet.'}</StatePanel>
               )}
             </div>
           </section>

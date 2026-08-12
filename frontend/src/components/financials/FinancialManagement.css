@@ -197,6 +197,14 @@
   color: var(--fm-expense);
 }
 
+.fm-pnl-income {
+  border-top: 4px solid var(--fm-income);
+}
+
+.fm-pnl-expense {
+  border-top: 4px solid var(--fm-expense);
+}
+
 .fm-metric-warning strong {
   color: var(--fm-warning);
 }
@@ -417,6 +425,44 @@
 .fm-performance-card dd {
   margin: 4px 0 0;
   font-weight: 900;
+}
+
+.fm-budget-watch-list {
+  display: grid;
+  gap: 12px;
+}
+
+.fm-budget-watch-row {
+  padding: 12px;
+  border: 1px solid var(--fm-line);
+  border-radius: 8px;
+  background: rgba(246, 251, 248, 0.76);
+}
+
+.fm-budget-watch-row.is-over {
+  border-color: rgba(194, 85, 96, 0.45);
+  background: rgba(255, 244, 244, 0.86);
+}
+
+.fm-budget-watch-heading,
+.fm-budget-watch-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.fm-budget-watch-heading small {
+  display: block;
+  margin-top: 4px;
+  color: var(--fm-muted);
+}
+
+.fm-budget-watch-meta {
+  margin-top: 6px;
+  color: var(--fm-muted);
+  font-size: 0.78rem;
+  font-weight: 750;
 }
 
 .fm-chip {
