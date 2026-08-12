@@ -526,6 +526,49 @@
   color: var(--fhm-green);
 }
 
+.fhm-treatment-tracking {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(28, 88, 75, 0.12);
+}
+
+.fhm-treatment-tracking .fhm-card-top {
+  align-items: center;
+}
+
+.fhm-tracking-entry {
+  display: grid;
+  gap: 4px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--fhm-soft-green);
+  color: var(--fhm-muted);
+  font-size: 0.82rem;
+}
+
+.fhm-tracking-entry > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fhm-tracking-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(236, 247, 242, 0.72);
+}
+
+.fhm-tracking-form .fhm-field:nth-last-of-type(-n + 2),
+.fhm-tracking-form .fhm-state,
+.fhm-tracking-form .fhm-actions {
+  grid-column: 1 / -1;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .fhm-tabs button,
   .fhm-btn,

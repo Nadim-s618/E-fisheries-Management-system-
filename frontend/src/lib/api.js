@@ -263,6 +263,14 @@ export function updateTreatmentPlan(id, treatment) {
 }
 
 
+export function addTreatmentTrackingEntry(id, entry) {
+  return request(`/fish-health/treatments/${id}/tracking/`, {
+    method: 'POST',
+    body: entry,
+  });
+}
+
+
 export function getFishHealthRecommendation(pondId) {
   const params = new URLSearchParams();
   if (pondId) params.set('pond', pondId);
@@ -586,19 +594,6 @@ export function getFinancialProfitLoss(filters = {}) {
 
 export function getPondFinancialPerformance(filters = {}) {
   return request(`/financials/pond-performance/${financialQuery(filters)}`);
-}
-
-
-export function getFeedCostAnalysis(filters = {}) {
-  return request(`/financials/feed-cost-analysis/${financialQuery(filters)}`);
-}
-
-
-export function estimateHarvestRevenue(values) {
-  return request('/financials/harvest-revenue-estimator/', {
-    method: 'POST',
-    body: values,
-  });
 }
 
 

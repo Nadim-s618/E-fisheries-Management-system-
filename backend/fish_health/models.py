@@ -188,3 +188,29 @@ class TreatmentPlan(models.Model):
 
     def __str__(self):
         return f'{self.medicine_name} for {self.pond}'
+
+
+class TreatmentTrackingEntry(models.Model):
+    treatment = models.ForeignKey(
+        TreatmentPlan,
+        on_delete=models.CASCADE,
+        related_name='tracking_entries',
+    )
+    status = models.CharField(max_length=16, choices=TreatmentPlan.Status.choices)
+    administered_dosage = models.CharField(max_length=160, blank=True)
+    quantity_used = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    notes = models.TextField(blank=True)
+    follow_up_date = models.DateField(null=True, blank=True)
+    follow_up_notes = models.TextField(blank=True)
+    recorded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='treatment_tracking_entries',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['treatment', '-created_at']),
+        ]

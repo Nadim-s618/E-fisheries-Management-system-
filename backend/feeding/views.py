@@ -174,6 +174,21 @@ def complete_session(request, pk):
     session.completed_at = timezone.now()
     session.save(update_fields=['actual_feed_kg', 'notes', 'status', 'completed_at', 'updated_at'])
 
+    from financials.services import create_automatic_financial_record
+
+    create_automatic_financial_record(request.user, {
+        'source_type': 'meal_feed',
+        'source_id': session.id,
+        'pond': session.pond_id,
+        'title': f'Feed used for meal {session.meal_number}',
+        'quantity': session.actual_feed_kg,
+        'unit': 'kg',
+        'unit_price': session.recommendation.price_per_kg,
+        'amount': session.actual_feed_kg * session.recommendation.price_per_kg,
+        'transaction_date': timezone.localdate(),
+        'reference': f'Feeding session #{session.id}',
+    })
+
     recommendation = session.recommendation
     next_session = recommendation.sessions.filter(status=FeedingSession.Status.PENDING).order_by('scheduled_at').first()
     next_recommendation = None

@@ -352,6 +352,33 @@ export function AIAdvicePanel({ dashboard }) {
 
       <p className="wqm-advice-summary">{advice?.explanation || 'No advice available for the latest reading.'}</p>
 
+      {advice?.danger_parameter_solutions?.length > 0 && (
+        <div className="wqm-danger-solutions" aria-label="Danger parameter solutions">
+          <div className="wqm-danger-solutions-heading">
+            <span>Act now</span>
+            <h3>Danger parameter solutions</h3>
+            <p>{advice.ai_enabled
+              ? 'Gemini suggests these actions to bring unsafe readings back toward their normal ranges.'
+              : 'Use these immediate actions to bring unsafe readings back toward their normal ranges.'}
+            </p>
+          </div>
+          <div className="wqm-danger-solution-grid">
+            {advice.danger_parameter_solutions.map(solution => (
+              <article key={solution.parameter} className="wqm-danger-solution-card">
+                <div className="wqm-card-top">
+                  <strong>{labelFor(solution.parameter)}</strong>
+                  <StatusPill status="Danger" />
+                </div>
+                <p>{solution.problem}</p>
+                <ul>
+                  {solution.suggestions.map(suggestion => <li key={suggestion}>{suggestion}</li>)}
+                </ul>
+              </article>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="wqm-advice-grid">
         <AdviceBlock title="Recommendations" items={advice?.recommendations} />
         <AdviceBlock title="Preventive Actions" items={advice?.preventive_actions} />

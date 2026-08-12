@@ -81,6 +81,7 @@
   width: 100%;
   min-height: 46px;
   padding: 0 13px;
+  font-size: 1rem;
   color: #10231c;
   border: 1px solid #c9ddd4;
   border-radius: 6px;
@@ -145,11 +146,40 @@
 
 @media (max-width: 520px) {
   .auth-page {
-    padding: 22px 14px;
+    min-height: 100dvh;
+    padding: 20px 14px;
     align-items: start;
   }
 
   .auth-card {
     padding: 24px 18px;
+    border-radius: 10px;
+  }
+
+  .auth-card h1 {
+    font-size: 1.75rem;
+    margin-bottom: 20px;
+  }
+
+  .auth-form {
+    gap: 14px;
+  }
+
+  .auth-submit {
+    min-height: 50px;
+  }
+}
+
+@media (max-width: 360px) {
+  .auth-page {
+    padding: 16px 10px;
+  }
+
+  .auth-card {
+    padding: 20px 14px;
+  }
+
+  .auth-brand {
+    margin-bottom: 14px;
   }
 }

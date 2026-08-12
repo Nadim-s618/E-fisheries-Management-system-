@@ -134,6 +134,7 @@ class FinancialTransaction(models.Model):
     class SourceType(models.TextChoices):
         MANUAL = 'manual', 'Manual'
         FEED_PURCHASE = 'feed_purchase', 'Feed purchase'
+        MEAL_FEED = 'meal_feed', 'Meal feed'
         FISH_STOCKING = 'fish_stocking', 'Fish stocking'
         MEDICINE_TREATMENT = 'medicine_treatment', 'Medicine or treatment'
         LABOR = 'labor', 'Labor'
