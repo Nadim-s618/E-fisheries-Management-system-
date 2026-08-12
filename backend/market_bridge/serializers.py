@@ -178,6 +178,8 @@ class MarketOrderSerializer(serializers.ModelSerializer):
     seller = serializers.IntegerField(source='listing.seller_id', read_only=True)
     seller_name = serializers.SerializerMethodField()
     buyer_name = serializers.SerializerMethodField()
+    buyer_username = serializers.SerializerMethodField()
+    buyer_email = serializers.SerializerMethodField()
     status_display = serializers.CharField(source='get_status_display', read_only=True)
 
     class Meta:
@@ -192,6 +194,8 @@ class MarketOrderSerializer(serializers.ModelSerializer):
             'seller_name',
             'buyer',
             'buyer_name',
+            'buyer_username',
+            'buyer_email',
             'quantity_kg',
             'unit_price',
             'total_price',
@@ -228,6 +232,12 @@ class MarketOrderSerializer(serializers.ModelSerializer):
         if order.buyer is None:
             return order.buyer_full_name or 'Guest buyer'
         return order.buyer.get_full_name() or order.buyer.username
+
+    def get_buyer_username(self, order):
+        return order.buyer.username if order.buyer else ''
+
+    def get_buyer_email(self, order):
+        return order.buyer.email if order.buyer else ''
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
