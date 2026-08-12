@@ -328,10 +328,24 @@ class ProfitLossView(APIView):
         transactions = apply_transaction_filters(user_transactions(request.user), request)
         income = sum_transactions(transactions, FinancialTransaction.TransactionType.INCOME)
         expenses = sum_transactions(transactions, FinancialTransaction.TransactionType.EXPENSE)
+        income_transactions = transactions.filter(transaction_type=FinancialTransaction.TransactionType.INCOME)
+        expense_transactions = transactions.filter(transaction_type=FinancialTransaction.TransactionType.EXPENSE)
+        automatic_income = sum_transactions(
+            income_transactions.filter(is_automatic=True),
+            FinancialTransaction.TransactionType.INCOME,
+        )
+        automatic_expenses = sum_transactions(
+            expense_transactions.filter(is_automatic=True),
+            FinancialTransaction.TransactionType.EXPENSE,
+        )
 
         return Response({
             'income': income,
             'expenses': expenses,
+            'income_manual': income - automatic_income,
+            'income_automatic': automatic_income,
+            'expenses_manual': expenses - automatic_expenses,
+            'expenses_automatic': automatic_expenses,
             'gross_profit': income - expenses,
             'net_profit': income - expenses,
             'profit_margin_percent': percent(income - expenses, income),
@@ -357,15 +371,6 @@ class PondPerformanceView(APIView):
             pond_transactions = transactions.filter(pond=pond)
             income = sum_transactions(pond_transactions, FinancialTransaction.TransactionType.INCOME)
             expenses = sum_transactions(pond_transactions, FinancialTransaction.TransactionType.EXPENSE)
-            feed_cost = money(
-                pond_transactions.filter(source_type=FinancialTransaction.SourceType.FEED_PURCHASE)
-                .aggregate(total=Sum('amount'))['total']
-            )
-            harvest_revenue = money(
-                pond_transactions.filter(source_type=FinancialTransaction.SourceType.HARVEST_SALE)
-                .aggregate(total=Sum('amount'))['total']
-            )
-
             results.append({
                 'pond_id': pond.id,
                 'pond_name': pond.name,
@@ -373,109 +378,11 @@ class PondPerformanceView(APIView):
                 'expenses': expenses,
                 'profit': income - expenses,
                 'profit_margin_percent': percent(income - expenses, income),
-                'feed_cost': feed_cost,
-                'harvest_revenue': harvest_revenue,
                 'transaction_count': pond_transactions.count(),
             })
 
         return Response({
             'ponds': sorted(results, key=lambda row: row['profit'], reverse=True),
-        })
-
-
-class FeedCostAnalysisView(APIView):
-    permission_classes = (IsAuthenticated,)
-
-    def get(self, request):
-        ensure_default_financial_setup(request.user)
-        transactions = apply_transaction_filters(user_transactions(request.user), request).filter(
-            source_type=FinancialTransaction.SourceType.FEED_PURCHASE,
-        )
-        total_cost = money(transactions.aggregate(total=Sum('amount'))['total'])
-        total_quantity = money(transactions.aggregate(total=Sum('quantity'))['total'])
-        average_cost = total_cost / total_quantity if total_quantity else Decimal('0')
-
-        return Response({
-            'summary': {
-                'total_feed_cost': total_cost,
-                'total_feed_quantity': total_quantity,
-                'average_cost_per_unit': round(average_cost, 2),
-                'record_count': transactions.count(),
-            },
-            'ponds': self.by_pond(transactions),
-            'monthly_trend': monthly_trend(transactions),
-        })
-
-    def by_pond(self, transactions):
-        rows = (
-            transactions
-            .values('pond_id', 'pond__name')
-            .annotate(total_cost=Sum('amount'), total_quantity=Sum('quantity'), count=Count('id'))
-            .order_by('-total_cost')
-        )
-        return [
-            {
-                'pond_id': row['pond_id'],
-                'pond_name': row['pond__name'] or 'No pond',
-                'total_cost': money(row['total_cost']),
-                'total_quantity': money(row['total_quantity']),
-                'average_cost_per_unit': (
-                    round(row['total_cost'] / row['total_quantity'], 2)
-                    if row['total_quantity'] else Decimal('0')
-                ),
-                'record_count': row['count'],
-            }
-            for row in rows
-        ]
-
-
-class HarvestRevenueEstimatorView(APIView):
-    permission_classes = (IsAuthenticated,)
-
-    def post(self, request):
-        try:
-            estimated_weight_kg = Decimal(str(request.data.get('estimated_weight_kg', '0')))
-            expected_price_per_kg = Decimal(str(request.data.get('expected_price_per_kg', '0')))
-            estimated_harvest_cost = Decimal(str(request.data.get('estimated_harvest_cost', '0') or '0'))
-        except (InvalidOperation, TypeError):
-            return Response(
-                {'detail': 'Estimator values must be valid numbers.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        if estimated_weight_kg <= 0:
-            return Response({'estimated_weight_kg': 'Estimated weight must be greater than zero.'}, status=status.HTTP_400_BAD_REQUEST)
-        if expected_price_per_kg <= 0:
-            return Response({'expected_price_per_kg': 'Expected price must be greater than zero.'}, status=status.HTTP_400_BAD_REQUEST)
-        if estimated_harvest_cost < 0:
-            return Response({'estimated_harvest_cost': 'Harvest cost cannot be negative.'}, status=status.HTTP_400_BAD_REQUEST)
-
-        pond_id = request.data.get('pond')
-        historical_cost = Decimal('0')
-        if pond_id:
-            if not str(pond_id).isdigit():
-                return Response({'pond': 'Pond must be a valid numeric id.'}, status=status.HTTP_400_BAD_REQUEST)
-            pond = user_ponds(request.user).filter(pk=pond_id).first()
-            if pond is None:
-                return Response({'pond': 'Pond not found.'}, status=status.HTTP_404_NOT_FOUND)
-            historical_cost = sum_transactions(
-                user_transactions(request.user).filter(pond=pond),
-                FinancialTransaction.TransactionType.EXPENSE,
-            )
-
-        gross_revenue = estimated_weight_kg * expected_price_per_kg
-        net_revenue = gross_revenue - estimated_harvest_cost
-        projected_profit = gross_revenue - estimated_harvest_cost - historical_cost
-
-        return Response({
-            'estimated_weight_kg': estimated_weight_kg,
-            'expected_price_per_kg': expected_price_per_kg,
-            'gross_revenue': gross_revenue,
-            'estimated_harvest_cost': estimated_harvest_cost,
-            'historical_pond_cost': historical_cost,
-            'net_revenue': net_revenue,
-            'projected_profit': projected_profit,
-            'projected_margin_percent': percent(projected_profit, gross_revenue),
         })
 
 

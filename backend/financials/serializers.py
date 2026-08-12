@@ -100,6 +100,14 @@ class TransactionLineSerializer(serializers.ModelSerializer):
 
 
 class FinancialTransactionSerializer(serializers.ModelSerializer):
+    extra_amount = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        required=False,
+        allow_null=True,
+        min_value=Decimal('0'),
+        write_only=True,
+    )
     pond_name = serializers.CharField(source='pond.name', read_only=True)
     fish_stock_name = serializers.CharField(source='fish_stock.batch_name', read_only=True)
     expense_category_name = serializers.CharField(source='expense_category.name', read_only=True)
@@ -128,6 +136,7 @@ class FinancialTransactionSerializer(serializers.ModelSerializer):
             'quantity',
             'unit',
             'unit_price',
+            'extra_amount',
             'transaction_date',
             'source_type',
             'source_type_display',
@@ -151,6 +160,9 @@ class FinancialTransactionSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
         )
+        extra_kwargs = {
+            'amount': {'required': False},
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -176,6 +188,15 @@ class FinancialTransactionSerializer(serializers.ModelSerializer):
         fish_stock = attrs.get('fish_stock', getattr(instance, 'fish_stock', None))
         expense_category = attrs.get('expense_category', getattr(instance, 'expense_category', None))
         income_category = attrs.get('income_category', getattr(instance, 'income_category', None))
+        quantity = attrs.get('quantity', getattr(instance, 'quantity', None))
+        unit_price = attrs.get('unit_price', getattr(instance, 'unit_price', None))
+        extra_amount = attrs.pop('extra_amount', None) or Decimal('0')
+
+        if quantity is not None and unit_price is not None:
+            attrs['amount'] = (quantity * unit_price + extra_amount).quantize(Decimal('0.01'))
+
+        if not attrs.get('amount') or attrs['amount'] <= Decimal('0'):
+            raise serializers.ValidationError({'amount': 'Amount must be greater than zero.'})
 
         if pond and owner and not owner.is_staff and pond.owner_id != owner.id:
             raise serializers.ValidationError({'pond': 'Pond not found.'})

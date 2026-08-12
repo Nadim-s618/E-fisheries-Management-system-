@@ -53,6 +53,12 @@ SOURCE_DEFAULTS = {
         'title': 'Feed purchase',
         'unit': 'kg',
     },
+    FinancialTransaction.SourceType.MEAL_FEED: {
+        'transaction_type': FinancialTransaction.TransactionType.EXPENSE,
+        'expense_category': 'Feed',
+        'title': 'Meal feed cost',
+        'unit': 'kg',
+    },
     FinancialTransaction.SourceType.FISH_STOCKING: {
         'transaction_type': FinancialTransaction.TransactionType.EXPENSE,
         'expense_category': 'Fish Stocking',
@@ -201,6 +207,16 @@ def create_automatic_financial_record(user, payload):
     if defaults is None:
         raise ValueError('Unsupported automatic source type.')
 
+    source_id = payload.get('source_id') or None
+    if source_id:
+        existing = FinancialTransaction.objects.filter(
+            owner=user,
+            source_type=source_type,
+            source_id=source_id,
+        ).first()
+        if existing:
+            return existing
+
     pond_id = payload.get('pond')
     fish_stock_id = payload.get('fish_stock') or None
     pond = None
@@ -223,6 +239,13 @@ def create_automatic_financial_record(user, payload):
             raise ValueError('Fish stock must belong to the selected pond.')
 
     transaction_type = defaults['transaction_type']
+    quantity = payload.get('quantity') or None
+    unit_price = payload.get('unit_price') or None
+    extra_amount = Decimal(str(payload.get('extra_amount') or '0'))
+    amount = Decimal(str(payload.get('amount') or '0'))
+    if quantity is not None and unit_price is not None:
+        amount = (Decimal(str(quantity)) * Decimal(str(unit_price)) + extra_amount).quantize(Decimal('0.01'))
+
     transaction_data = {
         'owner': user,
         'pond': pond,
@@ -230,13 +253,13 @@ def create_automatic_financial_record(user, payload):
         'transaction_type': transaction_type,
         'title': payload.get('title') or defaults['title'],
         'description': payload.get('description', ''),
-        'amount': Decimal(str(payload.get('amount'))),
-        'quantity': payload.get('quantity') or None,
+        'amount': amount,
+        'quantity': quantity,
         'unit': payload.get('unit') or defaults.get('unit', ''),
-        'unit_price': payload.get('unit_price') or None,
+        'unit_price': unit_price,
         'transaction_date': payload.get('transaction_date') or date.today(),
         'source_type': source_type,
-        'source_id': payload.get('source_id') or None,
+        'source_id': source_id,
         'reference': payload.get('reference', ''),
         'is_automatic': True,
     }
