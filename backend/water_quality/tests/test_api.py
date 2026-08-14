@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.test import APITestCase
 
 from ponds.models import Pond
+from stocks.models import FishStock
 from water_quality.models import WaterQualityReading
 from water_quality.utils.thresholds import STATUS_DANGER, STATUS_GOOD, STATUS_WARNING
 from water_quality.utils.trends import TREND_INCREASING
@@ -145,3 +146,26 @@ class WaterQualityApiTests(APITestCase):
         response = self.client.get(f'/api/water-quality/dashboard/?pond={self.other_pond.id}')
 
         self.assertEqual(response.status_code, 404)
+
+    def test_dashboard_uses_active_stock_species_strategy(self):
+        self.authenticate()
+        FishStock.objects.create(
+            pond=self.pond,
+            species='Tilapia',
+            batch_name='Tilapia Batch A',
+            stocking_date='2026-08-01',
+            initial_quantity=1000,
+            current_quantity=950,
+            initial_average_weight_g=20,
+        )
+        self.create_reading(temperature=31)
+
+        response = self.client.get(f'/api/water-quality/dashboard/?pond={self.pond.id}')
+
+        self.assertEqual(response.status_code, 200)
+        temperature_card = next(
+            card for card in response.data['parameter_cards']
+            if card['parameter'] == 'temperature'
+        )
+        self.assertEqual(response.data['strategy'], 'fish')
+        self.assertEqual(temperature_card['status'], STATUS_GOOD)
