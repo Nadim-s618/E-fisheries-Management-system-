@@ -17,7 +17,7 @@ from weather.models import WeatherReport
 from .models import WaterQualityReading
 from .serializers import WaterQualityReadingSerializer
 from .services.ai_advisor import get_water_quality_advice
-from .services.analyser import analyse_water_quality
+from .services.analyser import analyse_water_quality, get_primary_species
 from .services.notification_service import create_water_quality_notifications
 from .utils.thresholds import STATUS_DANGER, STATUS_GOOD, STATUS_WARNING
 from .utils.trends import calculate_trends
@@ -121,6 +121,7 @@ class WaterQualityDashboardView(APIView):
             turbidity=latest_reading.turbidity,
             salinity=latest_reading.salinity,
             water_level=latest_reading.water_level,
+            species=get_primary_species(latest_reading.pond),
         )
         trends = calculate_trends(latest_reading, previous_reading)
         parameter_cards = [
@@ -452,6 +453,7 @@ class WaterQualityCompareView(APIView):
             turbidity=latest_reading.turbidity,
             salinity=latest_reading.salinity,
             water_level=latest_reading.water_level,
+            species=get_primary_species(latest_reading.pond),
         )
         danger_count = self.count_status(analysis['parameters'], STATUS_DANGER)
         warning_count = self.count_status(analysis['parameters'], STATUS_WARNING)

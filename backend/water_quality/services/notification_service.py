@@ -1,5 +1,5 @@
 from core.models import Notification
-from water_quality.services.analyser import analyse_water_quality
+from water_quality.services.analyser import analyse_water_quality, get_primary_species
 from water_quality.utils.thresholds import STATUS_DANGER, STATUS_WARNING
 
 
@@ -18,6 +18,7 @@ def create_water_quality_notifications(reading):
         turbidity=reading.turbidity,
         salinity=reading.salinity,
         water_level=reading.water_level,
+        species=get_primary_species(reading.pond),
     )
     notifications = []
 
