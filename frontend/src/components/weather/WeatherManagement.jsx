@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { getPonds, getWeatherDashboard } from '../../lib/api';
 import './WeatherManagement.css';
@@ -294,8 +294,8 @@ export default function WeatherManagement() {
   }, [selectedPondId]);
 
   return (
-    <section className="wm-root" aria-labelledby="weather-title">
-      <div className="wm-header">
+    <section className="dp-management wm-root dp-weather-management" aria-labelledby="weather-title">
+      <div className="dp-management-header wm-header dp-fade-in">
         <div>
           <span className="wm-kicker">Weather</span>
           <h1 id="weather-title">Pond Weather Dashboard</h1>
@@ -311,7 +311,7 @@ export default function WeatherManagement() {
           </label>
           <button
             type="button"
-            className="wm-btn wm-btn-primary"
+            className="wm-btn wm-btn-primary dp-btn-primary dp-btn-animated"
             onClick={() => loadWeather(true)}
             disabled={!selectedPondId || loadingWeather}
           >

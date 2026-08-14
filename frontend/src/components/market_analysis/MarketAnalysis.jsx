@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { getMarketAnalysisDashboard } from '../../lib/api';
 import './MarketAnalysis.css';

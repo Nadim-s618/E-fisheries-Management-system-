@@ -13,6 +13,7 @@ from weather.models import WeatherReport
 
 from feeding.models import FeedingRecommendation, FeedingSession
 from feeding.services.notifications import create_feeding_notification
+from feeding.services.strategies import get_feeding_strategy_for_species
 
 
 DEFAULT_FEED_TYPE = 'Floating Feed 32%'
@@ -125,8 +126,9 @@ def build_recommendation_payload(pond, recommendation_date):
         recommended_feed = Decimal('1.00')
 
     recommended_feed = kg(recommended_feed)
-    meals = 1 if multiplier < Decimal('0.70') else 2
-    meal_times = REDUCED_MEAL_TIMES if meals == 1 else DEFAULT_MEAL_TIMES
+    strategy = get_feeding_strategy_for_species(stock_summary.get('strategy_species'))
+    meal_times = strategy.get_meal_times(multiplier)
+    meals = len(meal_times)
     schedule = build_schedule(recommendation_date, recommended_feed, meal_times)
     price_per_kg = DEFAULT_PRICE_PER_KG
 
@@ -144,6 +146,7 @@ def build_recommendation_payload(pond, recommendation_date):
             'water_quality': serialize_decimals(water_summary),
             'weather': serialize_decimals(weather_summary),
             'feeding_history': serialize_decimals(history_summary),
+            'strategy': strategy.name,
         },
     }
     return enhance_payload_with_ai(pond, payload)
@@ -327,9 +330,12 @@ def get_stock_summary(pond):
     total_quantity = 0
     growth_weight_batches = 0
     total_batches = 0
+    species = []
 
     for stock in stocks:
         total_batches += 1
+        species.append(stock.species)
+        strategy = get_feeding_strategy_for_species(stock.species)
         latest_record = latest_records.get(stock.id)
         if latest_record is not None:
             source_weight = latest_record.average_weight_g
@@ -338,18 +344,24 @@ def get_stock_summary(pond):
             source_weight = stock.initial_average_weight_g
         average_weight = Decimal(str(source_weight))
         biomass = (Decimal(stock.current_quantity) * average_weight) / Decimal('1000')
-        feeding_rate = get_feeding_rate(average_weight)
+        feeding_rate = strategy.get_feeding_rate(average_weight)
         total_biomass += biomass
         weighted_rate += feeding_rate * biomass
         total_quantity += stock.current_quantity
 
     rate = weighted_rate / total_biomass if total_biomass > 0 else Decimal('0.025')
 
+    unique_species = list(dict.fromkeys(species))
     return {
         'active_batches': stocks.count(),
         'current_quantity': total_quantity,
         'biomass_kg': kg(total_biomass),
         'feeding_rate': rate,
+        'strategy_species': unique_species[0] if len(unique_species) == 1 else None,
+        'strategy': (
+            get_feeding_strategy_for_species(unique_species[0]).name
+            if len(unique_species) == 1 else 'general'
+        ),
         'weight_source': (
             'current_growth'
             if growth_weight_batches == total_batches and total_batches
@@ -361,13 +373,7 @@ def get_stock_summary(pond):
 
 
 def get_feeding_rate(average_weight_g):
-    if average_weight_g < 50:
-        return Decimal('0.040')
-    if average_weight_g < 150:
-        return Decimal('0.030')
-    if average_weight_g < 500:
-        return Decimal('0.025')
-    return Decimal('0.018')
+    return get_feeding_strategy_for_species().get_feeding_rate(average_weight_g)
 
 
 def get_water_summary(pond):

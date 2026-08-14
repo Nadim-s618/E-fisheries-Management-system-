@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from rest_framework.test import APITestCase
 
 from ponds.models import Pond
+from water_quality.models import WaterQualityReading
 
 
 User = get_user_model()
@@ -169,3 +170,24 @@ class PondApiTests(APITestCase):
 
         self.assertEqual(response.status_code, 204)
         self.assertFalse(Pond.objects.filter(pk=pond.pk).exists())
+
+    def test_delete_pond_removes_water_quality_readings(self):
+        self.authenticate()
+        pond = self.create_pond()
+        WaterQualityReading.objects.create(
+            pond=pond,
+            temperature=28,
+            ph=7.5,
+            dissolved_oxygen=6,
+            ammonia=0.1,
+            nitrite=0.05,
+            nitrate=10,
+            turbidity=3,
+            water_level=5,
+        )
+
+        response = self.client.delete(f'/api/ponds/{pond.id}/')
+
+        self.assertEqual(response.status_code, 204)
+        self.assertFalse(Pond.objects.filter(pk=pond.pk).exists())
+        self.assertFalse(WaterQualityReading.objects.filter(pond_id=pond.pk).exists())

@@ -1,6 +1,7 @@
 from django.test import SimpleTestCase
 
 from water_quality.services.analyser import analyse_water_quality
+from water_quality.services.strategies import get_strategy_for_species
 from water_quality.utils.thresholds import STATUS_DANGER, STATUS_GOOD, STATUS_WARNING
 from water_quality.utils.trends import (
     TREND_DECREASING,
@@ -12,6 +13,54 @@ from water_quality.utils.trends import (
 
 
 class WaterQualityAnalysisTests(SimpleTestCase):
+    def test_missing_species_uses_general_strategy(self):
+        analysis = analyse_water_quality(
+            temperature=23,
+            ph=7.2,
+            dissolved_oxygen=6.5,
+            ammonia=0.01,
+            nitrite=0.1,
+            nitrate=25,
+            turbidity=55,
+            salinity=None,
+            water_level=4.5,
+        )
+
+        self.assertEqual(analysis['strategy'], 'general')
+        self.assertEqual(
+            next(item for item in analysis['parameters'] if item['parameter'] == 'temperature')['status'],
+            STATUS_WARNING,
+        )
+
+    def test_fish_species_uses_fish_strategy(self):
+        analysis = analyse_water_quality(
+            temperature=31,
+            ph=7.2,
+            dissolved_oxygen=6.5,
+            ammonia=0.01,
+            nitrite=0.1,
+            nitrate=25,
+            turbidity=55,
+            salinity=None,
+            water_level=4.5,
+            species='Tilapia',
+        )
+
+        self.assertEqual(analysis['strategy'], 'fish')
+        self.assertEqual(
+            next(item for item in analysis['parameters'] if item['parameter'] == 'temperature')['status'],
+            STATUS_GOOD,
+        )
+
+    def test_shrimp_species_uses_shrimp_strategy(self):
+        strategy = get_strategy_for_species('Whiteleg Shrimp')
+
+        self.assertEqual(strategy.name, 'shrimp')
+        self.assertEqual(strategy.analyse_parameter('salinity', 0)['status'], STATUS_DANGER)
+
+    def test_unknown_species_falls_back_to_fish_strategy(self):
+        self.assertEqual(get_strategy_for_species('Carp').name, 'fish')
+
     def test_analyse_water_quality_marks_safe_values_good(self):
         analysis = analyse_water_quality(
             temperature=28,
