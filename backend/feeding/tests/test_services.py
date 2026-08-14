@@ -15,6 +15,7 @@ from feeding.services.recommendations import (
     get_or_create_draft_recommendation,
     get_stock_summary,
 )
+from feeding.services.strategies import get_feeding_strategy_for_species
 from feeding.models import FeedingRecommendation
 from growth.models import GrowthRecord
 from ponds.models import Pond
@@ -22,6 +23,25 @@ from stocks.models import FishStock
 
 
 class FeedingCalculationUnitTests(SimpleTestCase):
+    def test_missing_species_uses_general_strategy(self):
+        strategy = get_feeding_strategy_for_species()
+
+        self.assertEqual(strategy.name, 'general')
+        self.assertEqual(strategy.get_feeding_rate(100), Decimal('0.030'))
+
+    def test_fish_species_uses_fish_strategy(self):
+        strategy = get_feeding_strategy_for_species('Tilapia')
+
+        self.assertEqual(strategy.name, 'fish')
+        self.assertEqual(strategy.get_meal_times(Decimal('1.00')), ['08:00', '16:30'])
+
+    def test_shrimp_strategy_uses_species_specific_rate_and_meals(self):
+        strategy = get_feeding_strategy_for_species('Whiteleg Shrimp')
+
+        self.assertEqual(strategy.name, 'shrimp')
+        self.assertEqual(strategy.get_feeding_rate(10), Decimal('0.060'))
+        self.assertEqual(len(strategy.get_meal_times(Decimal('1.00'))), 3)
+
     def test_feed_rate_bands_match_fish_size(self):
         self.assertEqual(get_feeding_rate(Decimal('49.99')), Decimal('0.040'))
         self.assertEqual(get_feeding_rate(Decimal('100.00')), Decimal('0.030'))
@@ -70,6 +90,16 @@ class FeedingServiceTests(TestCase):
         self.assertEqual(current_growth['biomass_kg'], Decimal('700.00'))
         self.assertEqual(stock_weight['weight_source'], 'stock_initial_weight')
         self.assertEqual(stock_weight['biomass_kg'], Decimal('100.00'))
+
+    def test_stock_summary_selects_strategy_from_active_species(self):
+        self.stock.species = 'Whiteleg Shrimp'
+        self.stock.initial_average_weight_g = Decimal('10.00')
+        self.stock.save(update_fields=['species', 'initial_average_weight_g'])
+
+        summary = get_stock_summary(self.pond)
+
+        self.assertEqual(summary['strategy'], 'shrimp')
+        self.assertEqual(summary['feeding_rate'], Decimal('0.060'))
 
     def test_draft_recommendation_is_reused(self):
         first, generated = get_or_create_draft_recommendation(self.pond)

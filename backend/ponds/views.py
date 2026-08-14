@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -5,6 +6,7 @@ from rest_framework.response import Response
 
 from .models import Pond
 from .serializers import PondSerializer
+from water_quality.models import WaterQualityReading
 
 
 def user_ponds(user):
@@ -41,7 +43,12 @@ def pond_detail(request, pk):
         return Response(PondSerializer(pond).data)
 
     if request.method == 'DELETE':
-        pond.delete()
+        # Water-quality readings use CASCADE in the model, but explicitly
+        # remove them first so existing PostgreSQL constraints cannot block
+        # deletion of ponds created before the relationship was migrated.
+        with transaction.atomic():
+            WaterQualityReading.objects.filter(pond_id=pond.pk).delete()
+            pond.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     serializer = PondSerializer(
