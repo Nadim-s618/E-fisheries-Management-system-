@@ -148,6 +148,53 @@
   min-width: 0;
 }
 
+.fm-auto-records-scroll {
+  min-width: 0;
+  width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding-bottom: 6px;
+}
+
+.fm-auto-records-row {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: nowrap;
+  gap: 18px;
+  width: 100%;
+}
+
+.fm-auto-records-panel {
+  flex: 0 0 100%;
+  min-width: 0;
+}
+
+.fm-auto-records-panel.is-collapsed {
+  flex-basis: 100%;
+}
+
+.fm-panel-toggle {
+  flex: 0 0 auto;
+  border: 1px solid var(--fm-border);
+  border-radius: 999px;
+  background: var(--fm-bg-tint);
+  color: var(--fm-teal-dark);
+  padding: 7px 11px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.fm-panel-toggle:hover {
+  background: var(--fm-teal-tint);
+}
+
+.fm-panel-toggle:focus-visible {
+  outline: 2px solid var(--fm-teal);
+  outline-offset: 2px;
+}
+
 @media (max-width: 860px) {
   .fm-grid-two {
     grid-template-columns: 1fr;
@@ -403,6 +450,67 @@
   display: block;
   font-size: 11px;
   color: var(--fm-muted);
+}
+
+.fm-record-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fm-record-card {
+  border: 1px solid var(--fm-border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: var(--fm-bg-tint);
+}
+
+.fm-record-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.fm-record-card-header > div {
+  min-width: 0;
+}
+
+.fm-record-card-header strong {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.fm-record-card-header span,
+.fm-record-card > small {
+  display: block;
+  margin-top: 3px;
+  color: var(--fm-muted);
+  font-size: 11px;
+}
+
+.fm-record-card dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 10px 0 0;
+}
+
+.fm-record-card dl div {
+  min-width: 0;
+}
+
+.fm-record-card dt {
+  color: var(--fm-muted);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.fm-record-card dd {
+  margin: 2px 0 0;
+  overflow-wrap: anywhere;
+  font-size: 12px;
 }
 
 /* ---------- Forms ---------- */

@@ -49,7 +49,7 @@
 
 .auth-eyebrow {
   margin: 0 0 8px;
-  color: #17765e;
+  color: #b7d3ca;
   font-size: 0.76rem;
   font-weight: 800;
   letter-spacing: 0.12em;
@@ -58,7 +58,7 @@
 
 .auth-card h1 {
   margin: 0 0 24px;
-  color: #0d2018;
+  color: #d5ebe4;
   font-size: 2rem;
   line-height: 1.15;
   letter-spacing: 0;
@@ -72,7 +72,7 @@
 .auth-form label {
   display: grid;
   gap: 7px;
-  color: #2c473a;
+  color: #c3ddd5;
   font-size: 0.88rem;
   font-weight: 700;
 }
@@ -129,13 +129,13 @@
 
 .auth-switch {
   margin: 20px 0 0;
-  color: #5a7468;
+  color: #aecbc1;
   font-size: 0.9rem;
   text-align: center;
 }
 
 .auth-switch a {
-  color: #0f6e56;
+  color: #d5ebe4;
   font-weight: 800;
   text-decoration: none;
 }
