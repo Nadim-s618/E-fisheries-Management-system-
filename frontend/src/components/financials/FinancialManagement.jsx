@@ -140,10 +140,36 @@ function TrendChart({ rows = [] }) {
   );
 }
 
-function TransactionTable({ rows, loading, error }) {
+function TransactionTable({ rows, loading, error, stacked = false }) {
   if (loading) return <PanelState>Loading financial records...</PanelState>;
   if (error) return <PanelState type="error">{error}</PanelState>;
   if (!rows.length) return <PanelState>No transactions match this view.</PanelState>;
+
+  if (stacked) {
+    return (
+      <div className="fm-record-list">
+        {rows.map(row => (
+          <article className="fm-record-card" key={row.id}>
+            <div className="fm-record-card-header">
+              <div>
+                <strong>{row.title}</strong>
+                <span>{formatDate(row.transaction_date)}</span>
+              </div>
+              <strong className={row.transaction_type === 'income' ? 'fm-positive' : 'fm-negative'}>
+                {row.transaction_type === 'income' ? '+' : '-'}{formatMoney(row.amount)}
+              </strong>
+            </div>
+            <dl>
+              <div><dt>Pond</dt><dd>{row.pond_name || 'All ponds'}</dd></div>
+              <div><dt>Category</dt><dd>{row.expense_category_name || row.income_category_name || 'Uncategorized'}</dd></div>
+              <div><dt>Source</dt><dd>{row.is_automatic ? row.source_type_display : 'Manual'}</dd></div>
+            </dl>
+            {row.reference && <small>{row.reference}</small>}
+          </article>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="fm-table-wrap">
@@ -309,21 +335,56 @@ function TransactionForm({ type, ponds, expenseCategories, incomeCategories, onS
 function AutomaticRecordLists({ transactions, loading }) {
   const automaticExpenses = transactions.filter(row => row.is_automatic && ['meal_feed', 'medicine_treatment'].includes(row.source_type));
   const automaticIncome = transactions.filter(row => row.is_automatic && row.source_type === 'harvest_sale');
+  const [expanded, setExpanded] = useState({ expenses: true, income: true });
+
+  function toggleSection(section) {
+    setExpanded(current => ({ ...current, [section]: !current[section] }));
+  }
 
   return (
-    <div className="fm-grid-two">
-      <section className="fm-panel">
-        <div className="fm-panel-header">
-          <div><span>Completed feeding and treatments</span><h2>Automatic Expenses</h2></div>
-        </div>
-        <TransactionTable rows={automaticExpenses} loading={loading} error="" />
-      </section>
-      <section className="fm-panel">
-        <div className="fm-panel-header">
-          <div><span>Completed store sales</span><h2>Automatic Income</h2></div>
-        </div>
-        <TransactionTable rows={automaticIncome} loading={loading} error="" />
-      </section>
+    <div className="fm-auto-records-scroll">
+      <div className="fm-auto-records-row">
+        <section className={`fm-panel fm-auto-records-panel${expanded.expenses ? '' : ' is-collapsed'}`}>
+          <div className="fm-panel-header">
+            <div>
+              <span>Completed feeding and treatments</span>
+              <h2>Automatic Expenses</h2>
+            </div>
+            <button
+              type="button"
+              className="fm-panel-toggle"
+              aria-expanded={expanded.expenses}
+              aria-controls="automatic-expenses-records"
+              onClick={() => toggleSection('expenses')}
+            >
+              {expanded.expenses ? 'Hide records' : 'Show records'}
+            </button>
+          </div>
+          <div id="automatic-expenses-records" hidden={!expanded.expenses}>
+            <TransactionTable rows={automaticExpenses} loading={loading} error="" stacked />
+          </div>
+        </section>
+        <section className={`fm-panel fm-auto-records-panel${expanded.income ? '' : ' is-collapsed'}`}>
+          <div className="fm-panel-header">
+            <div>
+              <span>Completed store sales</span>
+              <h2>Automatic Income</h2>
+            </div>
+            <button
+              type="button"
+              className="fm-panel-toggle"
+              aria-expanded={expanded.income}
+              aria-controls="automatic-income-records"
+              onClick={() => toggleSection('income')}
+            >
+              {expanded.income ? 'Hide records' : 'Show records'}
+            </button>
+          </div>
+          <div id="automatic-income-records" hidden={!expanded.income}>
+            <TransactionTable rows={automaticIncome} loading={loading} error="" stacked />
+          </div>
+        </section>
+      </div>
     </div>
   );
 }
