@@ -360,4 +360,5 @@ Before deployment:
 
 ## License
 
-No license file is currently included in the repository. Add a license before distributing the project outside the intended academic or internal context.
+No license file is currently included in the repository.
+
