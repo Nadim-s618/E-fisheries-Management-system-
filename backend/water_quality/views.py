@@ -139,6 +139,7 @@ class WaterQualityDashboardView(APIView):
         return Response({
             'latest_reading': WaterQualityReadingSerializer(latest_reading).data,
             'parameter_cards': parameter_cards,
+            'strategy': analysis['strategy'],
             'overall_status': analysis['overall_status'],
             'danger_count': self.count_status(parameter_cards, STATUS_DANGER),
             'warning_count': self.count_status(parameter_cards, STATUS_WARNING),

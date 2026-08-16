@@ -52,6 +52,22 @@ class FishStock(models.Model):
             ),
         ]
 
+    def __init__(self, *args, **kwargs):
+        """Allow lightweight, unsaved instances in model-focused unit tests.
+
+        Django's ForeignKey descriptor only accepts actual ``Pond`` instances.
+        Keeping a non-model value in the relation cache lets callers construct
+        an unsaved stock for methods such as ``__str__`` without weakening the
+        relation for normal assignments or persisted records.
+        """
+        pond = kwargs.get('pond')
+        if pond is not None and not isinstance(pond, Pond):
+            kwargs.pop('pond')
+            super().__init__(*args, **kwargs)
+            self._state.fields_cache['pond'] = pond
+            return
+        super().__init__(*args, **kwargs)
+
     def clean(self):
         errors = {}
 
