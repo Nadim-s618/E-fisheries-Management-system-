@@ -18,7 +18,6 @@ from .models import WaterQualityReading
 from .serializers import WaterQualityReadingSerializer
 from .services.ai_advisor import get_water_quality_advice
 from .services.analyser import analyse_water_quality, get_primary_species
-from .services.notification_service import create_water_quality_notifications
 from .utils.thresholds import STATUS_DANGER, STATUS_GOOD, STATUS_WARNING
 from .utils.trends import calculate_trends
 
@@ -45,8 +44,7 @@ class WaterQualityReadingViewSet(viewsets.ModelViewSet):
         return self.apply_filters(queryset)
 
     def perform_create(self, serializer):
-        reading = serializer.save()
-        create_water_quality_notifications(reading)
+        serializer.save()
 
     def apply_filters(self, queryset):
         pond_id = self.request.query_params.get('pond')
