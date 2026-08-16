@@ -57,6 +57,7 @@ DEBUG = env_bool('DEBUG', True)
 
 INSTALLED_APPS = [
     'corsheaders',
+    'storages',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -161,6 +162,32 @@ USE_TZ = True
 STATIC_URL = 'static/'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Supabase Storage (S3-compatible) for uploaded profile and listing images.
+# Keep these credentials in the deployment environment, never in the frontend.
+SUPABASE_STORAGE_BUCKET = os.getenv('SUPABASE_STORAGE_BUCKET', 'media')
+SUPABASE_S3_PUBLIC_DOMAIN = os.getenv('SUPABASE_S3_PUBLIC_DOMAIN', '')
+
+STORAGES = {
+    'default': {
+        'BACKEND': 'storages.backends.s3.S3Storage',
+    },
+    'staticfiles': {
+        'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+    },
+}
+
+AWS_ACCESS_KEY_ID = os.getenv('SUPABASE_S3_ACCESS_KEY_ID', '')
+AWS_SECRET_ACCESS_KEY = os.getenv('SUPABASE_S3_SECRET_ACCESS_KEY', '')
+AWS_STORAGE_BUCKET_NAME = SUPABASE_STORAGE_BUCKET
+AWS_S3_ENDPOINT_URL = os.getenv('SUPABASE_S3_ENDPOINT', '')
+AWS_S3_REGION_NAME = os.getenv('SUPABASE_S3_REGION', '')
+AWS_S3_CUSTOM_DOMAIN = SUPABASE_S3_PUBLIC_DOMAIN or None
+AWS_S3_ADDRESSING_STYLE = 'path'
+AWS_DEFAULT_ACL = None
+AWS_QUERYSTRING_AUTH = False
+AWS_S3_FILE_OVERWRITE = False
+AWS_S3_VERIFY = True
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
