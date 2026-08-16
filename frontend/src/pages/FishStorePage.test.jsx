@@ -13,6 +13,9 @@ import { fishStoreListings, placedOrder } from '../test/mocks/pageData';
 import { renderWithProviders } from '../test/utils/testUtils';
 
 vi.mock('../lib/api', () => import('../test/mocks/pageApi'));
+vi.mock('../context/useAuth', () => ({
+  useAuth: () => ({ isAuthenticated: false }),
+}));
 
 describe('FishStorePage', () => {
   beforeEach(() => {

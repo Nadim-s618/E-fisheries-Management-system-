@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import { DashboardSidebar } from '../components/dashboard/DashboardSidebar';
 import { DashboardSummary } from '../components/dashboard/DashboardSummary';
@@ -24,13 +24,24 @@ import {
 } from '../lib/api';
 import {
   DASHBOARD_NAV_ITEMS,
+  MARKET_BRIDGE_OWNER_EMAIL,
 } from '../data/dashboard';
 import './DashboardPage.css';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, logout } = useAuth();
-  const [activeNav, setActiveNav] = useState('water');
+  const canUseMarketBridge = user?.email?.toLowerCase() === MARKET_BRIDGE_OWNER_EMAIL;
+  const visibleNavItems = canUseMarketBridge
+    ? DASHBOARD_NAV_ITEMS
+    : DASHBOARD_NAV_ITEMS.map(item => item.id === 'market'
+      ? { ...item, id: 'fish-store', label: 'Fish Store' }
+      : item);
+  const [activeNav, setActiveNav] = useState(() => {
+    const savedNav = window.sessionStorage.getItem('e-fisheries.dashboard.activeNav');
+    return savedNav || 'home';
+  });
   const [pondFormOpenSignal, setPondFormOpenSignal] = useState(0);
   const [waterQualityTab, setWaterQualityTab] = useState('Dashboard');
   const [notifications, setNotifications] = useState([]);
@@ -41,6 +52,17 @@ export default function DashboardPage() {
     { label: 'Avg Temperature', value: '—', sub: 'No readings yet', accent: 'amber' },
     { label: 'Avg Oxygen', value: '—', sub: 'No readings yet', accent: 'green' },
   ]);
+
+  useEffect(() => {
+    if (location.state?.dashboardHome) {
+      setActiveNav('home');
+      window.sessionStorage.setItem('e-fisheries.dashboard.activeNav', 'home');
+    }
+  }, [location.state]);
+
+  useEffect(() => {
+    window.sessionStorage.setItem('e-fisheries.dashboard.activeNav', activeNav);
+  }, [activeNav]);
 
   const loadNotifications = useCallback(async () => {
     if (!user) {
@@ -168,6 +190,11 @@ export default function DashboardPage() {
   }
 
   function handleNavChange(navId) {
+    if (navId === 'market' && !canUseMarketBridge) return;
+    if (navId === 'fish-store') {
+      navigate('/fish-store', { state: { fromDashboard: true } });
+      return;
+    }
     if (navId === 'water') setWaterQualityTab('Dashboard');
     setActiveNav(navId);
   }
@@ -215,7 +242,7 @@ export default function DashboardPage() {
       <div className="dp-body">
         <DashboardSidebar
           activeNav={activeNav}
-          navItems={DASHBOARD_NAV_ITEMS}
+          navItems={visibleNavItems}
           onAddPond={handleAddPond}
           onNavChange={handleNavChange}
           onLogout={handleLogout}
@@ -239,7 +266,7 @@ export default function DashboardPage() {
             <FeedingManagement onNotificationChange={loadNotifications} />
           ) : activeNav === 'analysis' ? (
             <MarketAnalysis />
-          ) : activeNav === 'market' ? (
+          ) : activeNav === 'market' && canUseMarketBridge ? (
             <MarketBridge />
           ) : (
             <>

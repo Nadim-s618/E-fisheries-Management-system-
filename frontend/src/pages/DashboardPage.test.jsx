@@ -51,6 +51,7 @@ vi.mock('../components/water_quality/WaterQualityManagement', () => ({ default: 
 describe('DashboardPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.sessionStorage.clear();
     getNotifications.mockResolvedValue(pageNotifications);
     getPonds.mockResolvedValue(pagePonds);
     getPondStocks.mockResolvedValue([{ current_quantity: 1200 }]);
@@ -60,8 +61,7 @@ describe('DashboardPage', () => {
   it('loads dashboard statistics and navigation content', async () => {
     renderWithProviders(<MemoryRouter><DashboardPage /></MemoryRouter>);
 
-    await screen.findByText('Water quality management: Dashboard');
-    fireEvent.click(screen.getByRole('button', { name: 'Home' }));
+    await screen.findByRole('heading', { name: /Welcome to E-Fisheries/ });
     expect(await screen.findByText('Total Ponds: 2')).toBeInTheDocument();
     expect(screen.getByText('Total Fish: 2,400')).toBeInTheDocument();
     expect(screen.getByText('Avg Temperature: 28.0°C')).toBeInTheDocument();
@@ -71,7 +71,7 @@ describe('DashboardPage', () => {
 
   it('switches sections and opens the add-water-test view', async () => {
     renderWithProviders(<MemoryRouter><DashboardPage /></MemoryRouter>);
-    await screen.findByText('Water quality management: Dashboard');
+    await screen.findByRole('heading', { name: /Welcome to E-Fisheries/ });
 
     fireEvent.click(screen.getByRole('button', { name: 'Weather' }));
     expect(screen.getByText('Weather management')).toBeInTheDocument();
@@ -83,7 +83,7 @@ describe('DashboardPage', () => {
 
   it('opens pond management from the top navigation', async () => {
     renderWithProviders(<MemoryRouter><DashboardPage /></MemoryRouter>);
-    await screen.findByText('Water quality management: Dashboard');
+    await screen.findByRole('heading', { name: /Welcome to E-Fisheries/ });
     fireEvent.click(screen.getByRole('button', { name: 'Ponds' }));
 
     expect(await screen.findByText('Pond management')).toBeInTheDocument();
@@ -93,8 +93,7 @@ describe('DashboardPage', () => {
   it('falls back to unavailable-data labels when dashboard stats fail', async () => {
     getPondStocks.mockRejectedValueOnce(new Error('Dashboard data unavailable'));
     renderWithProviders(<MemoryRouter><DashboardPage /></MemoryRouter>);
-    await screen.findByText('Water quality management: Dashboard');
-    fireEvent.click(screen.getByRole('button', { name: 'Home' }));
+    await screen.findByRole('heading', { name: /Welcome to E-Fisheries/ });
 
     await waitFor(() => expect(getPonds).toHaveBeenCalled());
     expect(screen.getByText('Total Ponds: —')).toBeInTheDocument();
