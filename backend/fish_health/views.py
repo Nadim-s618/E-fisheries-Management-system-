@@ -19,7 +19,6 @@ from .serializers import (
     TreatmentPlanSerializer,
     TreatmentTrackingSerializer,
 )
-from .services.core.alerts import create_health_notifications
 from .services.core.diagnosis import diagnose_health_record
 from .services.water_quality.context import get_latest_water_quality_snapshot, get_water_quality_risk_notes
 from .services.weather.context import get_latest_weather_snapshot, get_weather_risk_notes
@@ -76,17 +75,14 @@ class HealthRecordViewSet(viewsets.ModelViewSet):
         return queryset
 
     def perform_create(self, serializer):
-        record = serializer.save()
-        create_health_notifications(record)
+        serializer.save()
 
     def perform_update(self, serializer):
-        record = serializer.save()
-        create_health_notifications(record)
+        serializer.save()
 
     @action(detail=True, methods=['post'], url_path='rediagnose')
     def rediagnose(self, request, pk=None):
         record = diagnose_health_record(self.get_object())
-        create_health_notifications(record)
         return Response(self.get_serializer(record).data)
 
 
