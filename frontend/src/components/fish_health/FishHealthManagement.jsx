@@ -839,7 +839,6 @@ export default function FishHealthManagement() {
 
   async function handleSaved() {
     await loadCoreData(selectedPondId);
-    setActiveTab('Dashboard');
   }
 
   async function handleMarkAlertsRead() {

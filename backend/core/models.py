@@ -19,6 +19,8 @@ class Notification(models.Model):
         Pond,
         on_delete=models.CASCADE,
         related_name='notifications',
+        null=True,
+        blank=True,
     )
     parameter = models.CharField(max_length=80)
     current_value = models.CharField(max_length=80)

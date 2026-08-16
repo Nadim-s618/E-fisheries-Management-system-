@@ -27,6 +27,21 @@
   min-height: 100vh;
 }
 
+.fish-store-page--from-dashboard {
+  animation: fish-store-enter 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes fish-store-enter {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .fish-store-page * {
   box-sizing: border-box;
 }
