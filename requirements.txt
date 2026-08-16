@@ -4,3 +4,4 @@ djangorestframework==3.17.1
 psycopg[binary]==3.3.4
 python-dotenv==1.2.2
 certifi>=2024.7.4
+gunicorn
