@@ -84,6 +84,11 @@ def feeding_dashboard(request):
             recommendation_date__gte=timezone.localdate(),
         ).order_by('recommendation_date', '-created_at').first()
         if recommendation:
+            # A draft created while Gemini was unavailable used the safe
+            # default price. Retry Gemini before returning that draft so a
+            # later dashboard request can replace the fallback values.
+            if (recommendation.input_summary or {}).get('ai_advice', {}).get('source') != 'gemini':
+                recommendation, _ = get_or_create_draft_recommendation(pond)
             generated = False
         else:
             recommendation, generated = get_or_create_draft_recommendation(pond)

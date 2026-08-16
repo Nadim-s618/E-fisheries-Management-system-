@@ -20,8 +20,6 @@ DEFAULT_FEED_TYPE = 'Floating Feed 32%'
 # Local Bangladesh feed-price baseline. The previous 4.50 value was a
 # Malaysian Ringgit-style amount and was incorrect when displayed as TK.
 DEFAULT_PRICE_PER_KG = Decimal('135.00')
-MIN_AI_PRICE_PER_KG = Decimal('50.00')
-MAX_AI_PRICE_PER_KG = Decimal('300.00')
 DEFAULT_MEAL_TIMES = ['08:00', '16:30']
 REDUCED_MEAL_TIMES = ['09:00']
 
@@ -126,7 +124,7 @@ def build_recommendation_payload(pond, recommendation_date):
         recommended_feed = Decimal('1.00')
 
     recommended_feed = kg(recommended_feed)
-    strategy = get_feeding_strategy_for_species(stock_summary.get('strategy_species'))
+    strategy = get_feeding_strategy_for_species(stock_summary.get('species'))
     meal_times = strategy.get_meal_times(multiplier)
     meals = len(meal_times)
     schedule = build_schedule(recommendation_date, recommended_feed, meal_times)
@@ -168,10 +166,7 @@ def enhance_payload_with_ai(pond, payload):
 
     ai_price = parse_decimal(ai_advice.get('price_per_kg'))
     if ai_price is not None and ai_price > 0:
-        payload['price_per_kg'] = kg(min(
-            max(ai_price, MIN_AI_PRICE_PER_KG),
-            MAX_AI_PRICE_PER_KG,
-        ))
+        payload['price_per_kg'] = kg(ai_price)
 
     if ai_advice.get('feed_type'):
         payload['feed_type'] = str(ai_advice['feed_type'])[:120]
@@ -217,8 +212,21 @@ def get_feeding_ai_advice(pond, payload):
         return fallback
 
     try:
-        ai_advice = generate_json_response(build_feeding_prompt(pond, payload), max_output_tokens=900)
+        # The feeding response contains several structured lists. Gemini can
+        # otherwise truncate the JSON before it closes, causing a fallback.
+        ai_advice = generate_json_response(build_feeding_prompt(pond, payload), max_output_tokens=1800)
     except (GeminiError, TypeError, ValueError):
+        return fallback
+
+    if not isinstance(ai_advice, dict):
+        return fallback
+
+    # Treat a response without either usable recommendation value as a
+    # Gemini failure. This keeps the UI honest and preserves the safe default.
+    if (
+        parse_decimal(ai_advice.get('recommended_feed_kg')) is None
+        and parse_decimal(ai_advice.get('price_per_kg')) is None
+    ):
         return fallback
 
     return {
@@ -237,6 +245,11 @@ def get_feeding_ai_advice(pond, payload):
 
 
 def build_feeding_prompt(pond, payload):
+    prompt_recommendation = dict(payload)
+    # Do not show Gemini the fallback price as if it were a market signal;
+    # otherwise it tends to copy Tk 135 instead of estimating independently.
+    prompt_recommendation['price_per_kg'] = 'not provided'
+    prompt_recommendation['estimated_cost'] = 'not provided'
     prompt_data = {
         'pond': {
             'name': pond.name,
@@ -246,16 +259,18 @@ def build_feeding_prompt(pond, payload):
             'water_source': pond.water_source,
             'stocking_capacity': pond.stocking_capacity,
         },
-        'formula_recommendation': serialize_decimals(payload),
+            'formula_recommendation': serialize_decimals(prompt_recommendation),
     }
 
     return (
         'You are an aquaculture feeding advisor. Use English only. '
         'Use the formula recommendation as the safe baseline and adjust only when the provided stock, '
         'water quality, weather, or feeding history strongly supports it. '
-        'Return JSON with keys: explanation, recommended_feed_kg, price_per_kg, feed_type, meals, meal_times, '
+        'Return only one JSON object with keys: explanation, recommended_feed_kg, price_per_kg, feed_type, meals, meal_times, '
         'reasons, recommendations, cautions. meal_times must be HH:MM strings. '
-        'price_per_kg must be a realistic Bangladesh feed price in BDT/TK per kilogram, between 50 and 300. '
+        'recommended_feed_kg and price_per_kg must be JSON numbers, not text. '
+        'Estimate price_per_kg independently from the species and feed type; do not copy a fallback price. '
+        'price_per_kg must be a realistic Bangladesh feed price in BDT/TK per kilogram. '
         'Keep recommendations practical and do not suggest medicine. '
         f'Data: {serialize_for_prompt(prompt_data)}'
     )
@@ -358,10 +373,8 @@ def get_stock_summary(pond):
         'biomass_kg': kg(total_biomass),
         'feeding_rate': rate,
         'strategy_species': unique_species[0] if len(unique_species) == 1 else None,
-        'strategy': (
-            get_feeding_strategy_for_species(unique_species[0]).name
-            if len(unique_species) == 1 else 'general'
-        ),
+        'species': unique_species,
+        'strategy': get_feeding_strategy_for_species(unique_species).name,
         'weight_source': (
             'current_growth'
             if growth_weight_batches == total_batches and total_batches

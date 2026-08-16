@@ -18,12 +18,43 @@ class FeedingStrategy:
 
 
 def get_feeding_strategy_for_species(species=None):
+    if isinstance(species, (list, tuple, set)):
+        species_names = [str(item or '').strip() for item in species if str(item or '').strip()]
+        if len(species_names) > 1:
+            from .mixed_strategy import MixedFishFeedingStrategy
+
+            return MixedFishFeedingStrategy()
+        species = species_names[0] if species_names else None
+
     normalized = str(species or '').strip().lower()
+
+    if normalized in {'mixed', 'mixed fish', 'mix fish', 'mix'}:
+        from .mixed_strategy import MixedFishFeedingStrategy
+
+        return MixedFishFeedingStrategy()
 
     if 'shrimp' in normalized or 'prawn' in normalized:
         from .shrimp_strategy import ShrimpFeedingStrategy
 
         return ShrimpFeedingStrategy()
+
+    if normalized in {'tilapia', 'monosex tilapia', 'nile tilapia'}:
+        from .tilapia_strategy import TilapiaFeedingStrategy
+
+        return TilapiaFeedingStrategy()
+
+    if normalized in {
+        'rohu', 'rui', 'catla', 'mrigal', 'carp', 'common carp',
+        'silver carp', 'grass carp', 'bighead carp',
+    }:
+        from .carp_strategy import CarpFeedingStrategy
+
+        return CarpFeedingStrategy()
+
+    if normalized in {'pangasius', 'pangas', 'basa', 'catfish', 'shingi', 'magur'}:
+        from .pangasius_strategy import PangasiusFeedingStrategy
+
+        return PangasiusFeedingStrategy()
 
     if normalized:
         from .fish_strategy import FishFeedingStrategy

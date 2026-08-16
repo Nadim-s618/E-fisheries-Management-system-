@@ -46,6 +46,15 @@ def generate_text_response(
     if not api_key:
         raise GeminiError('Gemini API key is not configured.')
 
+    model = getattr(settings, 'GEMINI_MODEL', 'gemini-3.6-flash')
+    generation_config = {
+        'maxOutputTokens': max_output_tokens,
+        'responseMimeType': response_mime_type,
+    }
+    # Gemini 3.x rejects deprecated sampling parameters such as temperature.
+    if not model.startswith('gemini-3.'):
+        generation_config['temperature'] = temperature
+
     payload = {
         'contents': [
             {
@@ -54,18 +63,14 @@ def generate_text_response(
                 ],
             },
         ],
-        'generationConfig': {
-            'temperature': temperature,
-            'maxOutputTokens': max_output_tokens,
-            'responseMimeType': response_mime_type,
-        },
+        'generationConfig': generation_config,
     }
     response_body = post_generate_content(api_key, payload)
     return extract_text(response_body)
 
 
 def post_generate_content(api_key, payload):
-    model = getattr(settings, 'GEMINI_MODEL', 'gemini-3.5-flash')
+    model = getattr(settings, 'GEMINI_MODEL', 'gemini-3.6-flash')
     url = f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent'
     request = Request(
         url,
