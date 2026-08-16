@@ -131,7 +131,7 @@
   flex-direction: column;
   color: #faf7f7;
 
-  background-image: url('background.png');
+  background-image: url('/background.png');
   background-size: cover;
   background-position: center 40%;
   background-repeat: no-repeat;
