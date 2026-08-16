@@ -4,7 +4,6 @@ from django.conf import settings
 from django.utils import timezone
 
 from .analysis import analyse_weather, parse_observed_at
-from .notification_service import create_weather_notifications
 from .openweather import SOURCE_NAME, SOURCE_URL, WeatherServiceError, fetch_forecast, geocode_location
 from ..models import WeatherReport
 
@@ -82,5 +81,4 @@ def create_weather_report(pond):
         source=SOURCE_NAME,
         source_url=SOURCE_URL,
     )
-    create_weather_notifications(report)
     return report

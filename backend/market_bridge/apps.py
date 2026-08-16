@@ -6,3 +6,5 @@ class MarketBridgeConfig(AppConfig):
     name = 'market_bridge'
     verbose_name = 'Market Bridge'
 
+    def ready(self):
+        from . import signals  # noqa: F401

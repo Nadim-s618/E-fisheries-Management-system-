@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from django.db.models import Avg
 
+from core.models import Notification
 from market_analysis.models import MarketPriceSnapshot
 from market_analysis.services import ensure_generated_market_data, round_decimal
 
@@ -24,6 +25,20 @@ def get_or_create_market_profile(user):
 
     profile, _ = MarketProfile.objects.get_or_create(user=user)
     return profile
+
+
+def notify_new_market_order(order):
+    """Observer callback for a newly created market order."""
+    Notification.objects.create(
+        user=order.listing.seller,
+        parameter='New fish store order',
+        current_value=f'{order.quantity_kg:g} kg · BDT {order.total_price:,.2f}',
+        reason=(
+            f'{order.buyer_full_name} ordered {order.listing.title}. '
+            f'Tracking code: {order.transaction_code}.'
+        ),
+        priority=Notification.Priority.MEDIUM,
+    )
 
 
 def infer_division(location):
