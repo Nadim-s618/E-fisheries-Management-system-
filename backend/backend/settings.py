@@ -115,7 +115,7 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'efisheries_db',
+        'NAME': os.getenv('DB_NAME', 'efisheries_db'),
         'USER': os.getenv('DB_USER') or '',
         'PASSWORD': os.getenv('DB_PASSWORD') or '',
         'HOST': os.getenv('DB_HOST') or 'localhost',
