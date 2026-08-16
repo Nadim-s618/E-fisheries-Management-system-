@@ -248,12 +248,11 @@ export function DashboardTopbar({
                     <button
                       key={notification.id || `${notification.pond}-${notification.parameter}-${index}`}
                       type="button"
-                      className={`dp-notif-menu-item ${notification.priority ? `priority-${notification.priority.toLowerCase()}` : ''}`}
+                      className="dp-notif-menu-item"
                       onClick={() => handleNotificationItemClick(notification)}
                     >
                       <span className="dp-notif-item-topline">
-                        <strong>{notification.pond_name || notification.pond}</strong>
-                        <small>{notification.priority}</small>
+                        <strong>{notification.pond_name || notification.pond || 'Fish Store'}</strong>
                       </span>
                       <span className="dp-notif-issue">
                         {notification.parameter}

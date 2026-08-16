@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import { createPublicMashrafeeCartOrder, getPublicMashrafeeStore, trackPublicMashrafeeOrder } from '../lib/api';
+import { useAuth } from '../context/useAuth';
 import './HomePage.css';
 import './FishStore.css';
 
@@ -95,6 +96,9 @@ function Receipt({ receipt }) {
 }
 
 export default function FishStorePage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { isAuthenticated } = useAuth();
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -236,10 +240,14 @@ export default function FishStorePage() {
   }
 
   return (
-    <div className="homepage fish-store-page">
+    <div className={`homepage fish-store-page${location.state?.fromDashboard ? ' fish-store-page--from-dashboard' : ''}`}>
       <nav className="navbar fs-navbar">
         <div className="navbar-inner">
-          <Link to="/" className="logo">
+          <Link
+            to={isAuthenticated ? '/dashboard' : '/'}
+            state={isAuthenticated ? { dashboardHome: true } : undefined}
+            className="logo"
+          >
             <img src="/logo.png" alt="E-Fisheries logo" className="logo-icon" />
             <span className="logo-text">
               <span className="logo-name">E-Fisheries</span>
@@ -247,8 +255,20 @@ export default function FishStorePage() {
             </span>
           </Link>
           <div className="nav-auth">
-            <Link to="/" className="btn-nav">Back to home</Link>
-            <Link to="/login" className="btn-nav">Sign in</Link>
+            {isAuthenticated ? (
+              <button
+                type="button"
+                className="btn-nav"
+                onClick={() => navigate('/dashboard', { state: { dashboardHome: true } })}
+              >
+                Back to Home
+              </button>
+            ) : (
+              <>
+                <Link to="/" className="btn-nav">Back to home</Link>
+                <Link to="/login" className="btn-nav">Sign in</Link>
+              </>
+            )}
           </div>
         </div>
       </nav>
@@ -276,7 +296,13 @@ export default function FishStorePage() {
           </button>
         </div>
         <div className="fs-hero-inner">
-          <Link to="/" className="store-back-link">← Back to homepage</Link>
+          <Link
+            to={isAuthenticated ? '/dashboard' : '/'}
+            state={isAuthenticated ? { dashboardHome: true } : undefined}
+            className="store-back-link"
+          >
+            ← Back to {isAuthenticated ? 'Home' : 'homepage'}
+          </Link>
           <p className="fs-eyebrow">Direct from Mashrafee</p>
           <h1 className="fs-title">Fish Store<span className="fs-title-of"> of </span>Mashrafee</h1>
           <p className="fs-sub">Order fresh fish straight from Mashrafee's counter. No account needed.</p>

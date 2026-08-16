@@ -9,6 +9,8 @@ export const DASHBOARD_NAV_ITEMS = [
   { id: 'analysis', label: 'Market Analysis', icon: 'M18 20V10M12 20V4M6 20v-6' },
 ];
 
+export const MARKET_BRIDGE_OWNER_EMAIL = 'shahoriyernadim@gmail.com';
+
 export const DASHBOARD_ALERTS = [
   { pond: 'Purba Madhnagar', issue: 'High oxygen level' },
   { pond: 'Dighi', issue: 'Low pH level' },
