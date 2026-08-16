@@ -32,7 +32,17 @@ class FeedingCalculationUnitTests(SimpleTestCase):
     def test_fish_species_uses_fish_strategy(self):
         strategy = get_feeding_strategy_for_species('Tilapia')
 
-        self.assertEqual(strategy.name, 'fish')
+        self.assertEqual(strategy.name, 'tilapia')
+        self.assertEqual(strategy.get_meal_times(Decimal('1.00')), ['08:00', '16:30'])
+
+    def test_other_fish_species_use_their_family_strategy(self):
+        self.assertEqual(get_feeding_strategy_for_species('Rohu').name, 'carp')
+        self.assertEqual(get_feeding_strategy_for_species('Pangasius').name, 'pangasius')
+
+    def test_mixed_fish_uses_mixed_strategy(self):
+        strategy = get_feeding_strategy_for_species(['Tilapia', 'Rohu'])
+
+        self.assertEqual(strategy.name, 'mixed')
         self.assertEqual(strategy.get_meal_times(Decimal('1.00')), ['08:00', '16:30'])
 
     def test_shrimp_strategy_uses_species_specific_rate_and_meals(self):
@@ -101,6 +111,18 @@ class FeedingServiceTests(TestCase):
         self.assertEqual(summary['strategy'], 'shrimp')
         self.assertEqual(summary['feeding_rate'], Decimal('0.060'))
 
+    def test_stock_summary_selects_mixed_strategy_for_multiple_species(self):
+        FishStock.objects.create(
+            pond=self.pond, species='Tilapia', batch_name='Tilapia A', stocking_date=date(2026, 1, 1),
+            initial_quantity=500, current_quantity=500,
+            initial_average_weight_g=Decimal('100.00'),
+        )
+
+        summary = get_stock_summary(self.pond)
+
+        self.assertEqual(summary['strategy'], 'mixed')
+        self.assertEqual(summary['species'], ['Rohu', 'Tilapia'])
+
     def test_draft_recommendation_is_reused(self):
         first, generated = get_or_create_draft_recommendation(self.pond)
         second, regenerated = get_or_create_draft_recommendation(self.pond)
@@ -111,7 +133,7 @@ class FeedingServiceTests(TestCase):
 
     @patch('feeding.services.recommendations.is_gemini_configured', return_value=True)
     @patch('feeding.services.recommendations.generate_json_response')
-    def test_gemini_price_is_clamped_into_safe_range(self, generate_json_response, configured):
+    def test_gemini_price_is_preserved_from_response(self, generate_json_response, configured):
         generate_json_response.return_value = {'price_per_kg': '999'}
         payload = {
             'recommendation_date': date(2026, 8, 1),
@@ -124,8 +146,8 @@ class FeedingServiceTests(TestCase):
 
         result = enhance_payload_with_ai(self.pond, payload)
 
-        self.assertEqual(result['price_per_kg'], Decimal('300.00'))
-        self.assertEqual(result['estimated_cost'], Decimal('3000.00'))
+        self.assertEqual(result['price_per_kg'], Decimal('999.00'))
+        self.assertEqual(result['estimated_cost'], Decimal('9990.00'))
         configured.assert_called_once_with()
 
     def test_feeding_notification_is_deduplicated(self):
