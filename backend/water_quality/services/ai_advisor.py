@@ -10,7 +10,12 @@ def get_water_quality_advice(analysis, context=None):
         return fallback
 
     try:
-        ai_advice = generate_json_response(build_water_quality_prompt(analysis, context or {}))
+        # Water-quality advice contains several arrays and danger-solution
+        # objects; allow enough output space for complete JSON.
+        ai_advice = generate_json_response(
+            build_water_quality_prompt(analysis, context or {}),
+            max_output_tokens=1800,
+        )
     except (GeminiError, json.JSONDecodeError, KeyError, TypeError, ValueError):
         return fallback
 
@@ -47,7 +52,7 @@ def build_water_quality_prompt(analysis, context):
         'Use English only. Use the rule-based statuses exactly as given; do not invent safer statuses. '
         'Consider pond, stock, weather, and recent history context when present. '
         'Keep advice practical for small to medium aquaculture ponds. '
-        'Return JSON with keys: explanation, recommendations, preventive_actions, emergency_actions, danger_parameter_solutions. '
+        'Return only one JSON object with keys: explanation, recommendations, preventive_actions, emergency_actions, danger_parameter_solutions. '
         'recommendations, preventive_actions, and emergency_actions must be arrays of short practical strings. '
         'danger_parameter_solutions must be an array. Include exactly one object for every item in danger_parameters, '
         'and no objects for parameters that are not Danger. Each object must have parameter, problem, and suggestions keys; '
