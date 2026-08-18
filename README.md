@@ -120,7 +120,7 @@ pip install -r ../requirements.txt
 cp .env.example .env
 ```
 
-Edit `backend/.env` with the PostgreSQL credentials. The backend always uses the database named `efisheries_db`.
+Edit `backend/.env` with the PostgreSQL credentials. Local development normally uses the database named `efisheries_db`; production can use another PostgreSQL database, including a Supabase project.
 
 Apply migrations and create an administrator:
 
@@ -179,6 +179,7 @@ Backend variables are documented in `backend/.env.example`.
 | `CORS_ALLOWED_ORIGINS` | No | Frontend origins allowed by the API |
 | `DB_USER` | Yes | PostgreSQL username |
 | `DB_PASSWORD` | Yes | PostgreSQL password |
+| `DB_NAME` | No | PostgreSQL database name, default `efisheries_db` |
 | `DB_HOST` | No | PostgreSQL host, default `localhost` |
 | `DB_PORT` | No | PostgreSQL port, default `5432` |
 | `OPENWEATHER_API_KEY` | Optional | Enables OpenWeather requests |
@@ -312,6 +313,130 @@ Tests are organized by responsibility where coverage has been expanded:
 6. Run the focused module tests before running the full suite.
 7. Run `npm run lint` and `npm run build` before frontend changes are considered complete.
 
+## Deployment
+
+The recommended production layout is:
+
+```text
+Vercel       -> React/Vite frontend
+Render       -> Django REST API
+Supabase     -> PostgreSQL database and optional object storage
+```
+
+The frontend and backend are deployed separately. The frontend must never contain database passwords, Supabase service-role keys, or other backend secrets.
+
+### Deploy the frontend to Vercel
+
+Create a Vercel project connected to the repository and use these settings:
+
+```text
+Root Directory: frontend
+Build Command:  npm run build
+Output Directory: dist
+```
+
+Set this Vercel environment variable for Production, Preview, and Development as needed:
+
+```env
+VITE_API_BASE_URL=https://your-render-service.onrender.com/api
+```
+
+The `frontend/vercel.json` file contains the single-page application rewrite required by React Router. Every frontend deployment should be tested at `/`, `/login`, `/signup`, and `/fish-store`.
+
+The public homepage content is bundled in `frontend/src/data/homepage.js`, so the first homepage render does not depend on the backend `/api/homepage/` request.
+
+### Deploy the backend to Render
+
+Create a Render Web Service connected to the repository with:
+
+```text
+Root Directory: backend
+Build Command: pip install -r ../requirements.txt && python manage.py collectstatic --noinput
+Start Command: gunicorn backend.wsgi:application --bind 0.0.0.0:$PORT
+```
+
+Run migrations as a Render pre-deploy command when available:
+
+```bash
+python manage.py migrate
+```
+
+Set these Render environment variables:
+
+```env
+DEBUG=False
+SECRET_KEY=<long-random-production-secret>
+ALLOWED_HOSTS=your-render-service.onrender.com
+CORS_ALLOWED_ORIGINS=https://your-vercel-domain.vercel.app
+DB_NAME=<database-name>
+DB_USER=<database-user>
+DB_PASSWORD=<database-password>
+DB_HOST=<database-host>
+DB_PORT=5432
+```
+
+If a custom frontend domain is used, add it to both `CORS_ALLOWED_ORIGINS` and the Vercel project configuration as appropriate. Separate origins with commas and do not add trailing slashes.
+
+Render free web services may sleep after inactivity, which causes a slow first API request after the service wakes. A paid instance avoids this cold-start behavior.
+
+### Use Supabase for PostgreSQL
+
+Supabase can host the complete Django PostgreSQL database while Render hosts the API. The frontend does not connect directly to the database.
+
+For a persistent Django backend, copy the Supabase session-pooler connection details from the Supabase Dashboard's Connect panel into Render:
+
+```env
+DB_NAME=postgres
+DB_USER=postgres.<project-ref>
+DB_PASSWORD=<supabase-database-password>
+DB_HOST=aws-<region>.pooler.supabase.com
+DB_PORT=5432
+```
+
+Use the connection values supplied by Supabase for the specific project rather than copying the example host above. Keep the database password only in Render environment variables and local untracked `.env` files.
+
+To move an existing local database to Supabase, create a backup and restore it into the Supabase database using the connection details from the Supabase dashboard:
+
+```bash
+pg_dump -h localhost -U <local-user> -d efisheries_db --no-owner --no-privileges > efisheries.sql
+psql "<supabase-connection-string>" < efisheries.sql
+```
+
+After configuring Render, verify the schema with:
+
+```bash
+python manage.py migrate
+python manage.py check --deploy
+```
+
+Supabase Storage is optional. When `SUPABASE_S3_ENDPOINT` is empty, this project uses local filesystem storage for development. When the Supabase S3 endpoint and credentials are configured, uploaded profile and listing images use Supabase Storage. Render's local filesystem should not be treated as permanent production media storage.
+
+### Production deployment checklist
+
+- Set `DEBUG=False`.
+- Generate a new production `SECRET_KEY`.
+- Configure the exact Render and Vercel origins.
+- Configure the Supabase or other PostgreSQL connection in Render.
+- Run migrations before serving traffic.
+- Configure Supabase Storage or another durable media provider.
+- Set `OPENWEATHER_API_KEY` if live weather data is required.
+- Set `GEMINI_API_KEY` if Gemini-powered recommendations are required.
+- Confirm database backups and recovery procedures.
+- Test signup, login, dashboard loading, image upload, weather, and public store ordering after deployment.
+
+## Performance Notes
+
+The initial homepage is static and renders from the frontend bundle. Authenticated dashboard data is loaded after login and can involve multiple API calls for ponds, stock, water quality, and notifications.
+
+For faster first visits:
+
+- Keep the frontend deployed as a Vercel static build.
+- Avoid putting secrets or database calls in frontend code.
+- Keep the Render backend awake with a paid instance if cold starts are unacceptable.
+- Load weather, finance, market, and feeding sections when the user opens them.
+- Prefer aggregated dashboard endpoints over one request per pond as the application grows.
+- Use browser DevTools Network timing to identify whether the delay is the Vercel bundle, Render cold start, API response, database query, or external weather/AI service.
+
 ## Common Troubleshooting
 
 ### PostgreSQL connection errors
@@ -361,4 +486,3 @@ Before deployment:
 ## License
 
 No license file is currently included in the repository.
-
