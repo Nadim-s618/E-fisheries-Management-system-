@@ -1,60 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 
-import { getHomepage } from '../lib/api';
+import homepageContent from '../data/homepage';
 import './HomePage.css';
 
 export default function HomePage() {
-  const [content, setContent] = useState(null);
-  const [loadError, setLoadError] = useState('');
+  const content = homepageContent;
   const heroLead = content?.hero.title.replace(content.hero.accent, '').trim();
-
-  useEffect(() => {
-    let isMounted = true;
-
-    getHomepage()
-      .then(data => {
-        if (isMounted) {
-          setContent(data);
-          setLoadError('');
-        }
-      })
-      .catch(() => {
-        if (isMounted) {
-          setLoadError('Homepage content is unavailable right now.');
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  if (!content) {
-    return (
-      <div className="homepage">
-        <nav className="navbar">
-          <div className="navbar-inner">
-            <span className="logo">
-              <img src="/logo.png" alt="E-Fisheries logo" className="logo-icon" />
-              <span className="logo-text">
-                <span className="logo-name">E-Fisheries</span>
-                <span className="logo-sub">Management System</span>
-              </span>
-            </span>
-            <div className="nav-auth">
-              <Link to="/signup" className="btn-nav">Sign up</Link>
-              <Link to="/login" className="btn-nav">Log in</Link>
-            </div>
-          </div>
-        </nav>
-        <main className="homepage-status" role={loadError ? 'alert' : 'status'}>
-          <h1>{loadError || 'Loading E-Fisheries...'}</h1>
-          {loadError && <p>Please check that the backend server is running.</p>}
-        </main>
-      </div>
-    );
-  }
 
   return (
     <div className="homepage">

@@ -167,10 +167,20 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # Keep these credentials in the deployment environment, never in the frontend.
 SUPABASE_STORAGE_BUCKET = os.getenv('SUPABASE_STORAGE_BUCKET', 'media')
 SUPABASE_S3_PUBLIC_DOMAIN = os.getenv('SUPABASE_S3_PUBLIC_DOMAIN', '')
+SUPABASE_S3_ENDPOINT = os.getenv('SUPABASE_S3_ENDPOINT', '').strip()
+
+# Use local media storage during development when Supabase has not been
+# configured. This keeps authentication and profile serialization working
+# without making boto3 try to connect to an empty S3 endpoint.
+DEFAULT_STORAGE_BACKEND = (
+    'storages.backends.s3.S3Storage'
+    if SUPABASE_S3_ENDPOINT
+    else 'django.core.files.storage.FileSystemStorage'
+)
 
 STORAGES = {
     'default': {
-        'BACKEND': 'storages.backends.s3.S3Storage',
+        'BACKEND': DEFAULT_STORAGE_BACKEND,
     },
     'staticfiles': {
         'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
@@ -180,7 +190,7 @@ STORAGES = {
 AWS_ACCESS_KEY_ID = os.getenv('SUPABASE_S3_ACCESS_KEY_ID', '')
 AWS_SECRET_ACCESS_KEY = os.getenv('SUPABASE_S3_SECRET_ACCESS_KEY', '')
 AWS_STORAGE_BUCKET_NAME = SUPABASE_STORAGE_BUCKET
-AWS_S3_ENDPOINT_URL = os.getenv('SUPABASE_S3_ENDPOINT', '')
+AWS_S3_ENDPOINT_URL = SUPABASE_S3_ENDPOINT
 AWS_S3_REGION_NAME = os.getenv('SUPABASE_S3_REGION', '')
 AWS_S3_CUSTOM_DOMAIN = SUPABASE_S3_PUBLIC_DOMAIN or None
 AWS_S3_ADDRESSING_STYLE = 'path'
