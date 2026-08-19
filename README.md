@@ -303,6 +303,23 @@ Tests are organized by responsibility where coverage has been expanded:
 <app>/tests/test_serializers.py
 ```
 
+### Static test inventory
+
+The following counts were identified by static inspection of the source tree:
+
+| Area | Observed test files / intent | Test files | Test blocks/methods |
+|---|---|---:|---:|
+| Authentication and pages | `AuthPage`, `HomePage`, `DashboardPage`, `FishStorePage`, and `ProfilePage` tests | 5 | 13 |
+| Dashboard components | Sidebar, summary, topbar, pond management, and stock/growth management | 5 | 14 |
+| Domain components | AI advisor, feeding, financials, fish health, market analysis, market bridge, water quality, and weather | 8 | 44 |
+| Frontend integration | Auth, Dashboard, Feeding, Financials, FishHealth, FishStore, HomePage, MarketBridge, Profile, and WaterQuality | 10 | 20 |
+| **Frontend total** |  | **28** | **91** |
+| Backend models/services/serializers | App-level tests covering models, serializers, and services across the domain apps | 30 | 188 |
+| Backend API/workflow and specialist tests | Endpoint workflows, authentication/API behavior, water-quality analysis, weather analysis, and weather reports | 25 | 104 |
+| **Backend total** |  | **55** | **292** |
+
+These are source-level inventory counts, not runtime pass/fail results or coverage percentages. The frontend integration count includes `Auth.integration.test.jsx`; the backend count includes `tests/__init__.py` files and specialist test modules.
+
 ## Development Workflow
 
 1. Start PostgreSQL and confirm the `efisheries_db` database is available.
