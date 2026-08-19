@@ -307,16 +307,16 @@ Tests are organized by responsibility where coverage has been expanded:
 
 The following counts were identified by static inspection of the source tree:
 
-| Area | Observed test files / intent | Test files | Test blocks/methods |
-|---|---|---:|---:|
-| Authentication and pages | `AuthPage`, `HomePage`, `DashboardPage`, `FishStorePage`, and `ProfilePage` tests | 5 | 13 |
-| Dashboard components | Sidebar, summary, topbar, pond management, and stock/growth management | 5 | 14 |
-| Domain components | AI advisor, feeding, financials, fish health, market analysis, market bridge, water quality, and weather | 8 | 44 |
-| Frontend integration | Auth, Dashboard, Feeding, Financials, FishHealth, FishStore, HomePage, MarketBridge, Profile, and WaterQuality | 10 | 20 |
-| **Frontend total** |  | **28** | **91** |
-| Backend models/services/serializers | 11 model-test modules covering persistence and validation; 8 serializer-test modules covering representation and input validation; and 11 service-test modules covering recommendations, calculations, ownership rules, notifications, and integrations | 30 | 188 |
-| Backend API/workflow and specialist tests | 9 app workflow modules and 2 explicit API modules covering authentication, ponds, growth, feeding, financials, fish health, market analysis, market bridge, water quality, and weather; specialist modules cover water-quality analysis plus weather analysis and report caching | 25 | 104 |
-| **Backend total** |  | **55** | **292** |
+| Area | Observed test files / intent | Testing type | Test files | Test blocks/methods |
+|---|---|---|---:|---:|
+| Authentication and pages | `AuthPage`, `HomePage`, `DashboardPage`, `FishStorePage`, and `ProfilePage` tests | Component/page unit testing and validation | 5 | 13 |
+| Dashboard components | Sidebar, summary, topbar, pond management, and stock/growth management | Component unit testing | 5 | 14 |
+| Domain components | AI advisor, feeding, financials, fish health, market analysis, market bridge, water quality, and weather | Component unit testing with mocked API behavior | 8 | 44 |
+| Frontend integration | Auth, Dashboard, Feeding, Financials, FishHealth, FishStore, HomePage, MarketBridge, Profile, and WaterQuality | Frontend integration testing | 10 | 20 |
+| **Frontend total** |  |  | **28** | **91** |
+| Backend models/services/serializers | 11 model-test modules covering persistence and validation; 8 serializer-test modules covering representation and input validation; and 11 service-test modules covering recommendations, calculations, ownership rules, notifications, and integrations | Unit testing, validation testing, serialization testing, and service testing | 30 | 188 |
+| Backend API/workflow and specialist tests | 9 app workflow modules and 2 explicit API modules covering authentication, ponds, growth, feeding, financials, fish health, market analysis, market bridge, water quality, and weather; specialist modules cover water-quality analysis plus weather analysis and report caching | API testing, authentication testing, workflow testing, and domain-rule testing | 25 | 104 |
+| **Backend total** |  |  | **55** | **292** |
 
 These are source-level inventory counts, not runtime pass/fail results or coverage percentages. The frontend integration count includes `Auth.integration.test.jsx`; the backend count includes `tests/__init__.py` files and specialist test modules.
 
