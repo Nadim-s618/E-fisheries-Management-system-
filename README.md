@@ -314,8 +314,8 @@ The following counts were identified by static inspection of the source tree:
 | Domain components | AI advisor, feeding, financials, fish health, market analysis, market bridge, water quality, and weather | 8 | 44 |
 | Frontend integration | Auth, Dashboard, Feeding, Financials, FishHealth, FishStore, HomePage, MarketBridge, Profile, and WaterQuality | 10 | 20 |
 | **Frontend total** |  | **28** | **91** |
-| Backend models/services/serializers | App-level tests covering models, serializers, and services across the domain apps | 30 | 188 |
-| Backend API/workflow and specialist tests | Endpoint workflows, authentication/API behavior, water-quality analysis, weather analysis, and weather reports | 25 | 104 |
+| Backend models/services/serializers | 11 model-test modules covering persistence and validation; 8 serializer-test modules covering representation and input validation; and 11 service-test modules covering recommendations, calculations, ownership rules, notifications, and integrations | 30 | 188 |
+| Backend API/workflow and specialist tests | 9 app workflow modules and 2 explicit API modules covering authentication, ponds, growth, feeding, financials, fish health, market analysis, market bridge, water quality, and weather; specialist modules cover water-quality analysis plus weather analysis and report caching | 25 | 104 |
 | **Backend total** |  | **55** | **292** |
 
 These are source-level inventory counts, not runtime pass/fail results or coverage percentages. The frontend integration count includes `Auth.integration.test.jsx`; the backend count includes `tests/__init__.py` files and specialist test modules.
